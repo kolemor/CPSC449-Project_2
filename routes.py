@@ -35,15 +35,15 @@ def reorder_placement(cur, total_enrolled, placement, class_id):
 
 
 #gets available classes for a student
-@router.get("/student/{id}/classes", tags=['Student']) 
-def get_available_classes(id = int, db: sqlite3.Connection = Depends(get_db)):
+@router.get("/students/{student_id}/classes", tags=['Student']) 
+def get_available_classes(student_id: int, db: sqlite3.Connection = Depends(get_db)):
     cursor = db.cursor()
     # Fetch student data from db
     cursor.execute(
         """
         SELECT * FROM student
         WHERE id = ?
-        """, (id,)
+        """, (student_id,)
     )
     student_data = cursor.fetchone()
     #Check if exist
@@ -80,12 +80,12 @@ def get_available_classes(id = int, db: sqlite3.Connection = Depends(get_db)):
 
 
 #gets currently enrolled classes for a student
-@router.get("/student/{id}/enrolled", tags=['Student'])
-def view_enrolled_classes(id: int, db: sqlite3.Connection = Depends(get_db)):
+@router.get("/students/{student_id}/enrolled", tags=['Student'])
+def view_enrolled_classes(student_id: int, db: sqlite3.Connection = Depends(get_db)):
     cursor = db.cursor()
     
     # Check if the student exists in the database
-    cursor.execute("SELECT * FROM student WHERE id = ?", (id,))
+    cursor.execute("SELECT * FROM student WHERE id = ?", (student_id,))
     student_data = cursor.fetchone()
 
     if not student_data:
@@ -99,7 +99,7 @@ def view_enrolled_classes(id: int, db: sqlite3.Connection = Depends(get_db)):
             JOIN student ON enrollment.student_id = student.id
             JOIN department ON class.department_id = department.id
             WHERE student.id = ? AND class.current_enroll < class.max_enroll
-        """, (id,))
+        """, (student_id,))
     student_data = cursor.fetchall()
     
     if not student_data:
@@ -110,7 +110,7 @@ def view_enrolled_classes(id: int, db: sqlite3.Connection = Depends(get_db)):
 
 # Enrolls a student into an available class,
 # or will automatically put the student on an open waitlist for a full class
-@router.post("/student/{id}/enroll", tags=['Student'])
+@router.post("/students/{student_id}/classes/{class_id}/enroll", tags=['Student'])
 def enroll_student_in_class(student_id: int, class_id: int, db: sqlite3.Connection = Depends(get_db)):
     cursor = db.cursor()
 
@@ -177,7 +177,7 @@ def enroll_student_in_class(student_id: int, class_id: int, db: sqlite3.Connecti
 
 
 # Have a student drop a class they're enrolled in
-@router.put("/student/{id}/drop/", tags=['Student'])
+@router.put("/students/{student_id}/classes/{class_id}/drop/", tags=['Student'])
 def drop_student_from_class(student_id: int, class_id: int, db: sqlite3.Connection = Depends(get_db)):
     cursor = db.cursor()
 
@@ -248,7 +248,7 @@ def view_all_class_waitlists(db: sqlite3.Connection = Depends(get_db)):
 
 
 # Get all waiting lists for a student
-@router.get("/waitlist/student/{student_id}", tags=['Waitlist'])
+@router.get("/waitlist/students/{student_id}", tags=['Waitlist'])
 def view_waiting_list(student_id: int, db: sqlite3.Connection = Depends(get_db)):
     cursor = db.cursor()
 
@@ -279,7 +279,7 @@ def view_waiting_list(student_id: int, db: sqlite3.Connection = Depends(get_db))
 
 
 # remove a student from a waiting list
-@router.put("/waitlist/student/{student_id}/drop", tags=['Waitlist'])
+@router.put("/waitlist/students/{student_id}/classes/{class_id}/drop", tags=['Waitlist'])
 def remove_from_waitlist(student_id: int, class_id: int, db: sqlite3.Connection = Depends(get_db)):
     cursor = db.cursor()
     
@@ -323,7 +323,7 @@ def remove_from_waitlist(student_id: int, class_id: int, db: sqlite3.Connection 
 
 # Get a list of students on a waitlist for a particular class that
 # a specific instructor teaches
-@router.get("/waitlist/instructor/{instructor_id}/class",tags=['Waitlist'])
+@router.get("/waitlist/instructors/{instructor_id}/classes/{class_id}",tags=['Waitlist'])
 def view_current_waitlist(instructor_id: int, class_id: int, db: sqlite3.Connection = Depends(get_db)):
     cursor = db.cursor()
 
@@ -363,7 +363,7 @@ def view_current_waitlist(instructor_id: int, class_id: int, db: sqlite3.Connect
 
 
 #view current enrollment for class
-@router.get("/instructor/{instructor_id}/enrollment", tags=['Instructor'])
+@router.get("/instructors/{instructor_id}/classes/{class_id}/enrollment", tags=['Instructor'])
 def get_instructor_enrollment(instructor_id: int, class_id: int, db: sqlite3.Connection = Depends(get_db)):
     cursor = db.cursor()
 
@@ -400,7 +400,7 @@ def get_instructor_enrollment(instructor_id: int, class_id: int, db: sqlite3.Con
 
 
 #view students who have dropped the class
-@router.get("/instructor/{instructor_id}/dropped", tags=['Instructor'])
+@router.get("/instructors/{instructor_id}/classes/{class_id}/drop", tags=['Instructor'])
 def get_instructor_dropped(instructor_id: int, class_id: int, db: sqlite3.Connection = Depends(get_db)):
     cursor = db.cursor()
 
@@ -429,7 +429,7 @@ def get_instructor_dropped(instructor_id: int, class_id: int, db: sqlite3.Connec
 
 
 #Instructor administratively drop students
-@router.post("/instructor/{instructor_id}/drop", tags=['Instructor'])
+@router.post("/instructors/{instructor_id}/classes/{class_id}/students/{student_id}/drop", tags=['Instructor'])
 def instructor_drop_class(instructor_id: int, class_id: int, student_id: int, db: sqlite3.Connection = Depends(get_db)):
     cursor = db.cursor()
 
@@ -530,7 +530,7 @@ def remove_class(class_id: int, db: sqlite3.Connection = Depends(get_db)):
 
 
 # Change the assigned instructor for a class
-@router.put("/registrar/classes/{class_id}/instructor", tags=['Registrar'])
+@router.put("/registrar/classes/{class_id}/instructors/{instructor_id}", tags=['Registrar'])
 def change_instructor(class_id: int, instructor_id: int, db: sqlite3.Connection = Depends(get_db)):
     cursor = db.cursor()
 
