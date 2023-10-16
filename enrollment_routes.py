@@ -9,7 +9,7 @@ dropped = []
 
 FREEZE = False
 MAX_WAITLIST = 3
-database = "database.db"
+database = "enrollment.db"
 
 # Connect to the database
 def get_db():
@@ -475,7 +475,6 @@ def instructor_drop_class(instructor_id: int, class_id: int, student_id: int, db
                     AND enrollment.placement <= class.max_enroll""", (instructor_id, class_id))
     enrolled_data = cursor.fetchall()
     
-
     return {"Enrollment" : enrolled_data}
 
 

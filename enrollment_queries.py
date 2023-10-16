@@ -57,7 +57,7 @@ def show_db(c):
 
 
 def start():
-    database = "database.db"
+    database = "enrollment.db"
     conn = create_connection(database)
 
     show_db(conn)

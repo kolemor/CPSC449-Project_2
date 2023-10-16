@@ -32,3 +32,14 @@ class Enrollment(BaseModel):
 class Dropped(BaseModel):
     class_id: int
     student_id: int
+
+#Testing out base models for users
+class User_info(BaseModel):
+    uid: int
+    name: str
+    password: str
+    roles: List
+
+class Register(BaseModel):
+    name: str
+    password: str

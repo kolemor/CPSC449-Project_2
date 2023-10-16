@@ -1,6 +1,6 @@
-# course-manager api
+# Project 2
 
-## create a venv ativate it then install the requirements
+## create a venv and activate it then install the requirements
 
 `python -m venv myenv`
 
@@ -8,24 +8,32 @@
 
 `pip install -r requirements.txt`
 
-
 ## then in the working directory run this command to run the uvicorn server
 
 `foreman start`
 
 ## finally go to the following link to test the api
 
-`http://localhost:5000/docs` 
+- Enrollment service
 
-## to populate the database with some sample data run populate.py
+  `http://localhost:5000/docs`
 
-`python populate.py`
+- user service
 
-## if you want to view what was populated in the db run test_queries.py
+  `http://localhost:5100/docs`
 
-`python test_queries.py`
+## to populate the databases with some sample data run populate.py
 
-# Testing variables
+`python populate_enrollment.py`
+
+`python populate_users.py`
+
+## if you want to view what was populated in the enrollment.db run enrollment_queries.py (the population for users.db does this automatically)
+
+`python enrollment_queries.py`
+
+# Enrollment Service testing variables
+
 - student_id 1 is on 3 waitlists (class_id: 8, 4, 13)
 - class_id 2 (with instructor_id 2) has 4 dropped students
 - class_id 4, 6, 8, 13, 14 are all full, but have open waitlists
@@ -35,6 +43,57 @@
 - there are 100 instructor_ids, with only ~14 of them being used
 
 # windows execution policy
+
 - if you are running this on a windows machine you may have to set the execution policy to run your virutal enviroment
 
 ` Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope Process`
+
+# Overview of files
+
+## Enrollment Service (Project 1)
+
+- enrollment_queries.py:
+  prints to the terminal what is located within the enrollment database
+
+- enrollment_routes.py:
+  contains all the routes and code for the endpoints of the API
+
+- enrollment.db:
+  the database file for the enrollment service
+
+- enrollment.py:
+  the 'main' file for the enrollment service
+
+- populate_enrollment.py:
+  creates and populates the enrollment database
+
+## Users Service (Project 2)
+
+- mkclaims.py & mkjwk.py:
+  used for JWT claims
+
+- populate_users.py:
+  creates and populates the users database
+
+- users_routes.py:
+  contains all the routes and code for the endpoints of the API
+
+- users.db:
+  the database file for the users service
+
+- users.py:
+  the 'main' file for the users service
+
+## Misc files
+
+- Procfile:
+  runs both services
+
+- requirements.txt:
+  the required libraries that pip needs to install
+
+- schemas.py:
+  both services use this for now, will probably split them up later
+
+- CPSC 449 Project 1 Documentation:
+  self explanatory
