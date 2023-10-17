@@ -67,6 +67,9 @@
 - populate_enrollment.py:
   creates and populates the enrollment database
 
+- enrollment_schemas.py:
+  has all the base models for the service
+
 ## Users Service (Project 2)
 
 - mkclaims.py & mkjwk.py:
@@ -84,6 +87,9 @@
 - users.py:
   the 'main' file for the users service
 
+- users_schemas.py:
+  has all the base models for the service
+
 ## Misc files
 
 - Procfile:
@@ -91,9 +97,6 @@
 
 - requirements.txt:
   the required libraries that pip needs to install
-
-- schemas.py:
-  both services use this for now, will probably split them up later
 
 - CPSC 449 Project 1 Documentation:
   self explanatory

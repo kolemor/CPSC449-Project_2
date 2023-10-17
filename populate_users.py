@@ -1,6 +1,5 @@
 import sqlite3
 import os
-from schemas import Class, Department, Enrollment, Dropped
 
 database = "users.db"
 

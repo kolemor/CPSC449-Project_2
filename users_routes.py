@@ -3,7 +3,7 @@ import sqlite3
 
 from typing import List
 from fastapi import Depends, HTTPException, APIRouter, status
-from schemas import User_info, Register
+from users_schemas import User_info, Register
 
 router = APIRouter()
 
@@ -46,7 +46,7 @@ def get_all_users(db: sqlite3.Connection = Depends(get_db)):
             uid=user["uid"],
             name=user["name"],
             password=user["password"],
-            roles=roles  # Using a list of strings for roles
+            roles=roles
         )
 
         users_info.append(user_information)
@@ -60,13 +60,13 @@ def get_user_login(db: sqlite3.Connection = Depends(get_db)):
     cursor = db.cursor()
 
 @router.post("/users/register", tags=['Users'])
-def get_user_login(register_data: Register, db: sqlite3.Connection = Depends(get_db)):
+def register_new_user(register_data: Register, db: sqlite3.Connection = Depends(get_db)):
     #TODO 
     # register enpoint implementation
     cursor = db.cursor()
 
 @router.get("/users/{uid}/password", tags=['Users'])
-def get_user_login(db: sqlite3.Connection = Depends(get_db)):
+def get_user_password(db: sqlite3.Connection = Depends(get_db)):
     #TODO 
     # /check user password enpoint implementation
     cursor = db.cursor()

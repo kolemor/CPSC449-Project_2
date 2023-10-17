@@ -2,7 +2,7 @@ import contextlib
 import sqlite3
 
 from fastapi import Depends, HTTPException, APIRouter, status
-from schemas import Class
+from enrollment_schemas import Class
 
 router = APIRouter()
 dropped = []
@@ -425,7 +425,7 @@ def get_instructor_dropped(instructor_id: int, class_id: int, db: sqlite3.Connec
                         WHERE dropped.class_id = ?""", (class_id,))
     dropped_data = cursor.fetchall()
     
-    return dropped_data
+    return {"Dropped": dropped_data}
 
 
 #Instructor administratively drop students

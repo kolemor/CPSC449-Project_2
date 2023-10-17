@@ -1,0 +1,234 @@
+{
+  "$schema": "https://www.krakend.io/schema/v2.4/krakend.json",
+  "version": 3,
+  "name": "KrakenD - API Gateway",
+  "timeout": "3000ms",
+  "cache_ttl": "300s",
+  "endpoints": [
+    {
+      "endpoint": "/api/students/{student_id}/classes",
+      "method": "GET",
+      "backend": [
+        {
+          "url_pattern": "/students/{student_id}/classes",
+          "host": ["http://localhost:5000"],
+          "extra_config": {
+            "backend/http": {
+              "return_error_details": "backend_alias"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "endpoint": "/api/students/{student_id}/enrolled",
+      "method": "GET",
+      "backend": [
+        {
+          "url_pattern": "/students/{student_id}/enrolled",
+          "host": ["http://localhost:5000"],
+          "extra_config": {
+            "backend/http": {
+              "return_error_details": "backend_alias"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "endpoint": "/api/students/{student_id}/classes/{class_id}/enroll/",
+      "method": "POST",
+      "backend": [
+        {
+          "url_pattern": "/students/{student_id}/classes/{class_id}/enroll/",
+          "host": ["http://localhost:5000"],
+          "extra_config": {
+            "backend/http": {
+              "return_error_details": "backend_alias"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "endpoint": "/api/students/{student_id}/classes/{class_id}/drop/",
+      "method": "PUT",
+      "backend": [
+        {
+          "url_pattern": "/students/{student_id}/classes/{class_id}/drop/",
+          "host": ["http://localhost:5000"],
+          "extra_config": {
+            "backend/http": {
+              "return_error_details": "backend_alias"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "endpoint": "/api/waitlist/classes",
+      "method": "GET",
+      "backend": [
+        {
+          "url_pattern": "/waitlist/classes",
+          "host": ["http://localhost:5000"],
+          "extra_config": {
+            "backend/http": {
+              "return_error_details": "backend_alias"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "endpoint": "/api/waitlist/students/{student_id}",
+      "method": "GET",
+      "backend": [
+        {
+          "url_pattern": "/waitlist/students/{student_id}",
+          "host": ["http://localhost:5000"],
+          "extra_config": {
+            "backend/http": {
+              "return_error_details": "backend_alias"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "endpoint": "/api/waitlist/students/{student_id}/classes/{class_id}/drop/",
+      "method": "PUT",
+      "backend": [
+        {
+          "url_pattern": "/waitlist/students/{student_id}/classes/{class_id}/drop/",
+          "host": ["http://localhost:5000"],
+          "extra_config": {
+            "backend/http": {
+              "return_error_details": "backend_alias"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "endpoint": "/api/waitlist/instructors/{instructor_id}/classes/{class_id}",
+      "method": "GET",
+      "backend": [
+        {
+          "url_pattern": "/waitlist/instructors/{instructor_id}/classes/{class_id}",
+          "host": ["http://localhost:5000"],
+          "extra_config": {
+            "backend/http": {
+              "return_error_details": "backend_alias"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "endpoint": "/api/instructors/{instructor_id}/classes/{class_id}/enrollment",
+      "method": "GET",
+      "backend": [
+        {
+          "url_pattern": "/instructors/{instructor_id}/classes/{class_id}/enrollment",
+          "host": ["http://localhost:5000"],
+          "extra_config": {
+            "backend/http": {
+              "return_error_details": "backend_alias"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "endpoint": "/api/instructors/{instructor_id}/classes/{class_id}/drop",
+      "method": "GET",
+      "backend": [
+        {
+          "url_pattern": "/instructors/{instructor_id}/classes/{class_id}/drop",
+          "host": ["http://localhost:5000"],
+          "extra_config": {
+            "backend/http": {
+              "return_error_details": "backend_alias"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "endpoint": "/api/instructors/{instructor_id}/classes/{class_id}/students/{student_id}/drop/",
+      "method": "POST",
+      "backend": [
+        {
+          "url_pattern": "/instructors/{instructor_id}/classes/{class_id}/students/{student_id}/drop/",
+          "host": ["http://localhost:5000"],
+          "extra_config": {
+            "backend/http": {
+              "return_error_details": "backend_alias"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "endpoint": "/api/registrar/classes/",
+      "method": "POST",
+      "backend": [
+        {
+          "url_pattern": "/registrar/classes/",
+          "host": ["http://localhost:5000"],
+          "extra_config": {
+            "backend/http": {
+              "return_error_details": "backend_alias"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "endpoint": "/api/registrar/classes/{class_id}",
+      "method": "DELETE",
+      "backend": [
+        {
+          "url_pattern": "/registrar/classes/{class_id}",
+          "host": ["http://localhost:5000"],
+          "extra_config": {
+            "backend/http": {
+              "return_error_details": "backend_alias"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "endpoint": "/api/registrar/classes/{class_id}/instructors/{instructor_id}",
+      "method": "PUT",
+      "backend": [
+        {
+          "url_pattern": "/registrar/classes/{class_id}/instructors/{instructor_id}",
+          "host": ["http://localhost:5000"],
+          "extra_config": {
+            "backend/http": {
+              "return_error_details": "backend_alias"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "endpoint": "/api/registrar/automatic-enrollment/freeze",
+      "method": "PUT",
+      "backend": [
+        {
+          "url_pattern": "/registrar/automatic-enrollment/freeze",
+          "host": ["http://localhost:5000"],
+          "extra_config": {
+            "backend/http": {
+              "return_error_details": "backend_alias"
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
