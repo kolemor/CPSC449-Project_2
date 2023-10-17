@@ -22,6 +22,10 @@
 
   `http://localhost:5100/docs`
 
+- KrakenD (enrollment service)
+
+  `http://localhost:5200/api/`
+
 ## to populate the databases with some sample data run populate.py
 
 `python populate_enrollment.py`
