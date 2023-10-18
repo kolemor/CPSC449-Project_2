@@ -32,6 +32,8 @@
 
 `python populate_users.py`
 
+the user database population can take anywhere from 30 seconds to a couple minutes as there are ~600 users, and each one needs to have their password hashed, which takes some time. I'll see if I can optimize this later on, but for now it works
+
 ## if you want to view what was populated in the enrollment.db run enrollment_queries.py (the population for users.db does this automatically)
 
 `python enrollment_queries.py`
@@ -46,6 +48,14 @@
 - there are 500 student_ids, with upwards of 300 of them currently being used
 - there are 100 instructor_ids, with only ~14 of them being used
 
+# Users Service testing variables
+
+- the first user has a username of "James Smith"
+- Every user's non-hashed password is the same as their username
+- Users 1 - 500 have the 'student' role
+- Users 501 - 600 have the 'instructor' role
+- Users 551 - 600 also have the 'registrar' role
+
 # windows execution policy
 
 - if you are running this on a windows machine you may have to set the execution policy to run your virutal enviroment
@@ -57,50 +67,69 @@
 ## Enrollment Service (Project 1)
 
 - enrollment_queries.py:
+
   prints to the terminal what is located within the enrollment database
 
 - enrollment_routes.py:
+
   contains all the routes and code for the endpoints of the API
 
 - enrollment.db:
+
   the database file for the enrollment service
 
 - enrollment.py:
+
   the 'main' file for the enrollment service
 
 - populate_enrollment.py:
+
   creates and populates the enrollment database
 
 - enrollment_schemas.py:
+
   has all the base models for the service
 
 ## Users Service (Project 2)
 
 - mkclaims.py & mkjwk.py:
+
   used for JWT claims
 
 - populate_users.py:
+
   creates and populates the users database
 
 - users_routes.py:
+
   contains all the routes and code for the endpoints of the API
 
 - users.db:
+
   the database file for the users service
 
 - users.py:
+
   the 'main' file for the users service
 
 - users_schemas.py:
+
   has all the base models for the service
+
+- users_hash.py:
+
+  has functions which handle password hashing
 
 ## Misc files
 
 - Procfile:
+
   runs both services
 
 - requirements.txt:
+
   the required libraries that pip needs to install
 
 - CPSC 449 Project 1 Documentation:
+
   self explanatory
