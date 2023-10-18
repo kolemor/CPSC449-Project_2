@@ -1,7 +1,7 @@
 import sqlite3
 import os
 
-from users_hash import hash_password
+from users.users_hash import hash_password
 
 database = "users.db"
 

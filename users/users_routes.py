@@ -5,8 +5,8 @@ import collections
 
 from typing import List
 from fastapi import Depends, HTTPException, APIRouter, status, Query
-from users_schemas import User_info, User
-from users_hash import hash_password, verify_password
+from users.users_schemas import User_info, User, User_Role
+from users.users_hash import hash_password, verify_password
 
 router = APIRouter()
 
@@ -145,7 +145,7 @@ def get_user_password(username: str = Query(..., title="Username", description="
 # Search for specific users based on optional parameters,
 # if no parameters are given, returns all users
 @router.get("/debug/search", response_model=List[User_info], tags=['Debug'])
-def get_one_user(uid: typing.Optional[str] = None,
+def search_for_users(uid: typing.Optional[str] = None,
                  name: typing.Optional[str] = None,
                  role: typing.Optional[str] = None,
                  db: sqlite3.Connection = Depends(get_db)):
@@ -178,6 +178,9 @@ def get_one_user(uid: typing.Optional[str] = None,
     cursor.execute(sql, values)
     search_data = cursor.fetchall()
 
+    if not search_data:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No users found that match search parameters")
+
     for user in search_data:
         cursor.execute(
             """
@@ -205,5 +208,26 @@ def get_one_user(uid: typing.Optional[str] = None,
 
 # Change a users role
 @router.put("/debug/{user_id}", response_model=List[User_info], tags=['Debug'])
-def change_role(db: sqlite3.Connection = Depends(get_db)):
-    users_info = []
+def change_role(user_id: int, db: sqlite3.Connection = Depends(get_db)):
+    cursor = db.cursor()
+    
+    # Check if user exists
+    cursor.execute(
+        """
+        SELECT * FROM user_role WHERE user_id = ?
+        """, (user_id,)
+    )
+    user_data = cursor.fetchone()
+    
+    if not user_data:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+    
+    cursor.execute(
+        """
+        UPDATE user_role SET 
+        """, (user_id,)
+    )
+
+
+
+

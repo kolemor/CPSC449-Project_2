@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from enrollment_routes import router  
+from enrollment.enrollment_routes import router  
 
 app = FastAPI()
 

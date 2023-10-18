@@ -1,6 +1,6 @@
 import sqlite3
 import os
-from enrollment_schemas import Class, Department, Enrollment, Dropped
+from enrollment.enrollment_schemas import Class, Department, Enrollment, Dropped
 
 database = "enrollment.db"
 
