@@ -1,5 +1,7 @@
 import contextlib
 import sqlite3
+import typing
+import collections
 
 from typing import List
 from fastapi import Depends, HTTPException, APIRouter, status, Query
@@ -10,6 +12,23 @@ router = APIRouter()
 
 database = "users.db"
 
+# Used for the search endpoint
+SearchParam = collections.namedtuple("SearchParam", ["name", "operator"])
+SEARCH_PARAMS = [
+    SearchParam(
+        "uid",
+        "=",
+    ),
+    SearchParam(
+        "name",
+        "LIKE",
+    ),
+    SearchParam(
+        "role",
+        "LIKE",
+    ),
+]
+
 # Connect to the database
 def get_db():
     with contextlib.closing(sqlite3.connect(database, check_same_thread=False)) as db:
@@ -18,6 +37,7 @@ def get_db():
 
 #==========================================Users==================================================
 
+# The login enpoint, where JWT validation needs to occur
 @router.post("/users/login", tags=['Users'])
 def get_user_login(user: User, db: sqlite3.Connection = Depends(get_db)):
     cursor = db.cursor()
@@ -41,6 +61,8 @@ def get_user_login(user: User, db: sqlite3.Connection = Depends(get_db)):
     # return message
     return {"message": "Login successful"}
 
+
+# Create new user endpoint
 @router.post("/users/register", tags=['Users'])
 def register_new_user(user: User, db: sqlite3.Connection = Depends(get_db)):
     cursor = db.cursor()
@@ -85,6 +107,8 @@ def register_new_user(user: User, db: sqlite3.Connection = Depends(get_db)):
 
     return {"message": "User created successfully"}
 
+
+# Have a user check their password
 @router.get("/users/check_password", tags=['Users'])
 def get_user_password(username: str = Query(..., title="Username", description="Your username"),
     password: str = Query(..., title="Password", description="Your password"),
@@ -117,24 +141,44 @@ def get_user_password(username: str = Query(..., title="Username", description="
 # None of the following endpoints are required (I assume), but might be helpful
 # for testing purposes
 
-#A simple test endpoint to list out all the users and their relevant info
-@router.get("/debug", response_model=List[User_info], tags=['Debug'])
-def get_all_users(db: sqlite3.Connection = Depends(get_db)):
+
+# Search for specific users based on optional parameters,
+# if no parameters are given, returns all users
+@router.get("/debug/search", response_model=List[User_info], tags=['Debug'])
+def get_one_user(uid: typing.Optional[str] = None,
+                 name: typing.Optional[str] = None,
+                 role: typing.Optional[str] = None,
+                 db: sqlite3.Connection = Depends(get_db)):
+    
     users_info = []
+
+    sql = """SELECT * FROM users
+             LEFT JOIN user_role ON users.uid = user_role.user_id
+             LEFT JOIN role ON user_role.role_id = role.rid"""
+    
+    conditions = []
+    values = []
+    arguments = locals()
+
+    for param in SEARCH_PARAMS:
+        if arguments[param.name]:
+            if param.operator == "=":
+                conditions.append(f"{param.name} = ?")
+                values.append(arguments[param.name])
+            else:
+                conditions.append(f"{param.name} LIKE ?")
+                values.append(f"%{arguments[param.name]}%")
+    
+    if conditions:
+        sql += " WHERE "
+        sql += " AND ".join(conditions)
 
     cursor = db.cursor()
 
-    cursor.execute(
-        """
-        SELECT * FROM users
-        """
-    )
-    users_data = cursor.fetchall()
+    cursor.execute(sql, values)
+    search_data = cursor.fetchall()
 
-    if not users_data:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No users found")
-
-    for user in users_data:
+    for user in search_data:
         cursor.execute(
             """
             SELECT role FROM user_role 
@@ -158,10 +202,6 @@ def get_all_users(db: sqlite3.Connection = Depends(get_db)):
 
     return users_info
 
-# Get a single users information
-@router.get("/debug/{user_id}", response_model=List[User_info], tags=['Debug'])
-def get_one_user(user_id: int, db: sqlite3.Connection = Depends(get_db)):
-    users_info = []
 
 # Change a users role
 @router.put("/debug/{user_id}", response_model=List[User_info], tags=['Debug'])
