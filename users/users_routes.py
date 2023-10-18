@@ -204,30 +204,3 @@ def search_for_users(uid: typing.Optional[str] = None,
         users_info.append(user_information)
 
     return users_info
-
-
-# Change a users role
-@router.put("/debug/{user_id}", response_model=List[User_info], tags=['Debug'])
-def change_role(user_id: int, db: sqlite3.Connection = Depends(get_db)):
-    cursor = db.cursor()
-    
-    # Check if user exists
-    cursor.execute(
-        """
-        SELECT * FROM user_role WHERE user_id = ?
-        """, (user_id,)
-    )
-    user_data = cursor.fetchone()
-    
-    if not user_data:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
-    
-    cursor.execute(
-        """
-        UPDATE user_role SET 
-        """, (user_id,)
-    )
-
-
-
-
