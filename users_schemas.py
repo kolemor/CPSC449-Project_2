@@ -7,6 +7,6 @@ class User_info(BaseModel):
     password: str
     roles: List
 
-class Register(BaseModel):
+class User(BaseModel):
     name: str
     password: str
