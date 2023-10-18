@@ -1,6 +1,8 @@
 import sqlite3
 import os
 
+from users_hash import hash_password
+
 database = "users.db"
 
 #Remove database if it exists before creating and populating it
@@ -38,6 +40,8 @@ for male in mname:
     names.append(fname[last])
     last += 1
 
+if os.path.exists(database):
+    os.remove(database)
 """ create a database connection to the SQLite database
         specified by db_file
     :param db_file: database file
@@ -97,13 +101,15 @@ def populate_database():
 
     cursor = conn.cursor()
 
+    print("Please wait as database population can take 30 seconds to a couple minutes...")
+
     for index, user_name in enumerate(names, start=1):
         cursor.execute(
             """
             INSERT INTO users (name, password)
             VALUES (?, ?)
             """,
-            (user_name, "")
+            (user_name, hash_password(user_name))
         )
         if index <= 500:
             cursor.execute(
