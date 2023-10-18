@@ -1,9 +1,9 @@
 import sqlite3
 import os
 
-from users.users_hash import hash_password
+from users_hash import hash_password
 
-database = "users.db"
+database = "users/users.db"
 
 #Remove database if it exists before creating and populating it
 if os.path.exists(database):

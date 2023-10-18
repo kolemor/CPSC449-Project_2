@@ -10,7 +10,7 @@ from users.users_hash import hash_password, verify_password
 
 router = APIRouter()
 
-database = "users.db"
+database = "users/users.db"
 
 # Used for the search endpoint
 SearchParam = collections.namedtuple("SearchParam", ["name", "operator"])

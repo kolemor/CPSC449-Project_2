@@ -1,8 +1,8 @@
 import sqlite3
 import os
-from enrollment.enrollment_schemas import Class, Department, Enrollment, Dropped
+from enrollment_schemas import Class, Department, Enrollment, Dropped
 
-database = "enrollment.db"
+database = "enrollment/enrollment.db"
 
 #Remove database if it exists before creating and populating it
 if os.path.exists(database):

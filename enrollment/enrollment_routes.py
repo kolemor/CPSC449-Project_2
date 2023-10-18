@@ -9,7 +9,7 @@ dropped = []
 
 FREEZE = False
 MAX_WAITLIST = 3
-database = "enrollment.db"
+database = "enrollment/enrollment.db"
 
 # Connect to the database
 def get_db():
