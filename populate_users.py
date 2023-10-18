@@ -92,17 +92,35 @@ def populate_database():
     create_table(conn, users_table)
 
     role_table = """ CREATE TABLE IF NOT EXISTS role (
-                            user_id integer,
-                            role text,
-                            UNIQUE(user_id, role)
-                            FOREIGN KEY(user_id) REFERENCES users(uid)
+                            rid integer PRIMARY KEY,
+                            role text UNIQUE
                         ); """
     create_table(conn, role_table)
+
+    userrole_table = """ CREATE TABLE IF NOT EXISTS user_role (
+                            user_id integer,
+                            role_id integer,
+                            PRIMARY KEY (user_id, role_id),
+                            FOREIGN KEY (user_id) REFERENCES users (uid),
+                            FOREIGN KEY (role_id) REFERENCES roles (rid)
+                        ); """
+    create_table(conn, userrole_table)
 
     cursor = conn.cursor()
 
     print("Please wait as database population can take 30 seconds to a couple minutes...")
 
+    roles = ['student', 'instructor', 'registrar']
+    
+    for role in roles:
+        cursor.execute(
+            """
+            INSERT INTO role (role)
+            VALUES (?)
+            """,
+            (role,)
+        )
+    
     for index, user_name in enumerate(names, start=1):
         cursor.execute(
             """
@@ -114,26 +132,26 @@ def populate_database():
         if index <= 500:
             cursor.execute(
                 """
-                INSERT INTO role (user_id, role)
+                INSERT INTO user_role (user_id, role_id)
                 VALUES (?, ?)
                 """,
-                (index, "student")
+                (index, 1)
             )
         else:
             cursor.execute(
                 """
-                INSERT INTO role (user_id, role)
+                INSERT INTO user_role (user_id, role_id)
                 VALUES (?, ?)
                 """,
-                (index, "instructor")
+                (index, 2)
             )
         if index > 550:
             cursor.execute(
                 """
-                INSERT INTO role (user_id, role)
+                INSERT INTO user_role (user_id, role_id)
                 VALUES (?, ?)
                 """,
-                (index, "registrar")
+                (index, 3)
             )
 
     conn.commit()
@@ -149,6 +167,10 @@ def populate_database():
     select_query(conn, query)
     
     query = "SELECT * FROM role"
+    print('\n'+query)
+    select_query(conn, query)
+
+    query = "SELECT * FROM user_role"
     print('\n'+query)
     select_query(conn, query)
 
