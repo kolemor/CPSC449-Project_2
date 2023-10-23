@@ -32,8 +32,7 @@ def generate_claims(username, user_id, roles):
         "exp": int(exp.timestamp()),
     }
 
-    output = json.dumps(token, indent=4)
-    print(output)
+    return token
 
 
 if __name__ == "__main__":

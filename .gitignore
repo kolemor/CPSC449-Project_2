@@ -32,6 +32,7 @@ htmlcov/
 .coverage
 .coverage.*
 log.txt
+user_keys.json
 
 # Ignore project-specific configuration files
 settings.ini

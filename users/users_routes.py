@@ -3,10 +3,10 @@ import sqlite3
 import typing
 import collections
 
-from typing import List
 from fastapi import Depends, HTTPException, APIRouter, status, Query
-from users.users_schemas import User_info, User, User_Role
+from users.users_schemas import *
 from users.users_hash import hash_password, verify_password
+from users.mkclaims import generate_claims
 
 router = APIRouter()
 
@@ -56,10 +56,24 @@ def get_user_login(user: User, db: sqlite3.Connection = Depends(get_db)):
     if not verify_password(user.password, user_data['password']):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid password")
     
-    #TODO: JWT validation
+    # Retrieve roles for the student
+    cursor.execute(
+           """
+           SELECT role FROM user_role
+           JOIN role ON user_role.role_id = role.rid
+           JOIN users ON user_role.user_id = users.uid
+           WHERE user_id = ?
+           """,
+           (user_data["uid"],)
+       )
+    roles_data = cursor.fetchall()
 
-    # return message
-    return {"message": "Login successful"}
+    roles = [role["role"] for role in roles_data]
+
+    #Issue JWT token
+    token_data = generate_claims(user_data['name'], user_data['uid'], roles)
+    return token_data
+
 
 
 # Create new user endpoint
@@ -144,7 +158,7 @@ def get_user_password(username: str = Query(..., title="Username", description="
 
 # Search for specific users based on optional parameters,
 # if no parameters are given, returns all users
-@router.get("/debug/search", response_model=List[User_info], tags=['Debug'])
+@router.get("/debug/search", tags=['Debug'])
 def search_for_users(uid: typing.Optional[str] = None,
                  name: typing.Optional[str] = None,
                  role: typing.Optional[str] = None,
@@ -203,4 +217,4 @@ def search_for_users(uid: typing.Optional[str] = None,
 
         users_info.append(user_information)
 
-    return users_info
+    return {"users" : users_info}

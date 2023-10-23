@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import os
 import sys
 import json
@@ -11,10 +13,13 @@ def usage():
 
 
 def generate_keys(key_ids):
-    keys = [jwk.JWK.generate(kid=key_id, kty="oct", alg="RS256") for key_id in key_ids]
-    exported_keys = [key.export() for key in keys]
+    keys = [jwk.JWK.generate(kid=key_id, kty="RSA", alg="RS256") for key_id in key_ids]
+    exported_keys = [
+        key.export(private_key=private) for key in keys for private in [False, True]
+    ]
     keys_as_json = [json.loads(exported_key) for exported_key in exported_keys]
-    output = json.dumps(keys_as_json, indent=4)
+    jwks = {"keys": keys_as_json}
+    output = json.dumps(jwks, indent=4)
     print(output)
 
 
