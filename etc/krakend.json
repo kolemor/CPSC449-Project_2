@@ -8,24 +8,20 @@
     {
       "endpoint": "/api/students/{student_id}/classes",
       "method": "GET",
+      "extra_config": {
+        "auth/validator": {
+          "alg": "RS256",
+          "roles_key": "roles",
+          "roles": ["student", "registrar"],
+          "jwk_local_path": "user_keys.json",
+          "disable_jwk_security": true,
+          "cache": false,
+          "operation_debug": true
+        }
+      },
       "backend": [
         {
           "url_pattern": "/students/{student_id}/classes",
-          "host": ["http://localhost:5000"],
-          "extra_config": {
-            "backend/http": {
-              "return_error_details": "backend_alias"
-            }
-          }
-        }
-      ]
-    },
-    {
-      "endpoint": "/api/students/{student_id}/enrolled",
-      "method": "GET",
-      "backend": [
-        {
-          "url_pattern": "/students/{student_id}/enrolled",
           "host": ["http://localhost:5000"],
           "extra_config": {
             "backend/http": {
@@ -56,21 +52,6 @@
       "backend": [
         {
           "url_pattern": "/students/{student_id}/classes/{class_id}/drop/",
-          "host": ["http://localhost:5000"],
-          "extra_config": {
-            "backend/http": {
-              "return_error_details": "backend_alias"
-            }
-          }
-        }
-      ]
-    },
-    {
-      "endpoint": "/api/waitlist/classes",
-      "method": "GET",
-      "backend": [
-        {
-          "url_pattern": "/waitlist/classes",
           "host": ["http://localhost:5000"],
           "extra_config": {
             "backend/http": {
@@ -218,10 +199,160 @@
     {
       "endpoint": "/api/registrar/automatic-enrollment/freeze",
       "method": "PUT",
+      "extra_config": {
+        "auth/validator": {
+          "alg": "RS256",
+          "roles_key": "roles",
+          "roles": ["registrar"],
+          "jwk_local_path": "user_keys.json",
+          "disable_jwk_security": true,
+          "cache": false
+        }
+      },
       "backend": [
         {
           "url_pattern": "/registrar/automatic-enrollment/freeze",
           "host": ["http://localhost:5000"],
+          "extra_config": {
+            "backend/http": {
+              "return_error_details": "backend_alias"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "endpoint": "/api/debug/students/{student_id}/enrolled",
+      "method": "GET",
+      "backend": [
+        {
+          "url_pattern": "/debug/students/{student_id}/enrolled",
+          "host": ["http://localhost:5000"],
+          "extra_config": {
+            "backend/http": {
+              "return_error_details": "backend_alias"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "endpoint": "/api/debug/waitlist/classes",
+      "method": "GET",
+      "backend": [
+        {
+          "url_pattern": "/debug/waitlist/classes",
+          "host": ["http://localhost:5000"],
+          "extra_config": {
+            "backend/http": {
+              "return_error_details": "backend_alias"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "endpoint": "/api/debug/users/search",
+      "method": "GET",
+      "backend": [
+        {
+          "url_pattern": "/debug/users/search",
+          "host": ["http://localhost:5000"],
+          "extra_config": {
+            "backend/http": {
+              "return_error_details": "backend_alias"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "endpoint": "/api/debug/classes",
+      "method": "GET",
+      "backend": [
+        {
+          "url_pattern": "/debug/classes",
+          "host": ["http://localhost:5000"],
+          "extra_config": {
+            "backend/http": {
+              "return_error_details": "backend_alias"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "endpoint": "/api/users/login",
+      "method": "POST",
+      "backend": [
+        {
+          "url_pattern": "/users/login",
+          "host": ["http://localhost:5100"],
+          "extra_config": {
+            "backend/http": {
+              "return_error_details": "backend_alias"
+            }
+          }
+        }
+      ],
+      "extra_config": {
+        "auth/signer": {
+          "alg": "RS256",
+          "kid": "help",
+          "keys_to_sign": ["access_token", "refresh_token"],
+          "jwk_local_path": "user_keys.json",
+          "disable_jwk_security": true
+        }
+      }
+    },
+    {
+      "endpoint": "/api/users/register",
+      "method": "POST",
+      "backend": [
+        {
+          "url_pattern": "/users/register",
+          "host": ["http://localhost:5100"],
+          "extra_config": {
+            "backend/http": {
+              "return_error_details": "backend_alias"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "endpoint": "/api/users/check_password",
+      "method": "GET",
+      "extra_config": {
+        "auth/validator": {
+          "alg": "RS256",
+          "roles_key": "roles",
+          "roles": ["registrar"],
+          "jwk_local_path": "user_keys.json",
+          "disable_jwk_security": true,
+          "cache": false
+        }
+      },
+      "input_query_strings": ["uid", "name", "role"],
+      "backend": [
+        {
+          "url_pattern": "/users/check_password",
+          "host": ["http://localhost:5100"],
+          "extra_config": {
+            "backend/http": {
+              "return_error_details": "backend_alias"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "endpoint": "/api/debug/search",
+      "method": "GET",
+      "backend": [
+        {
+          "url_pattern": "/debug/search",
+          "host": ["http://localhost:5100"],
           "extra_config": {
             "backend/http": {
               "return_error_details": "backend_alias"
