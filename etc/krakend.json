@@ -13,7 +13,7 @@
           "alg": "RS256",
           "roles_key": "roles",
           "roles": ["student", "registrar"],
-          "jwk_local_path": "user_keys.json",
+          "jwk_local_path": "public.json",
           "disable_jwk_security": true,
           "cache": false,
           "operation_debug": true
@@ -298,9 +298,9 @@
       "extra_config": {
         "auth/signer": {
           "alg": "RS256",
-          "kid": "help",
+          "kid": "test",
           "keys_to_sign": ["access_token", "refresh_token"],
-          "jwk_local_path": "user_keys.json",
+          "jwk_local_path": "private.json",
           "disable_jwk_security": true
         }
       }

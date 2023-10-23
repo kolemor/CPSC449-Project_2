@@ -56,7 +56,7 @@ SEARCH_PARAMS = [
 
 
 #gets available classes for a student
-@router.get("/students/{student_id}/classes", response_model=List[Class_Info], tags=['Student']) 
+@router.get("/students/{student_id}/classes", tags=['Student']) 
 def get_available_classes(student_id: int, db: sqlite3.Connection = Depends(get_db)):
     cursor = db.cursor()
     # Fetch student data from db
@@ -121,8 +121,7 @@ def get_available_classes(student_id: int, db: sqlite3.Connection = Depends(get_
         )
         class_info_list.append(class_info)
 
-    return class_info_list
-
+    return {"Classes": class_info_list}
 
 # Enrolls a student into an available class,
 # or will automatically put the student on an open waitlist for a full class
