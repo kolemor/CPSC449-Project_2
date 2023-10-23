@@ -1,6 +1,6 @@
 import sqlite3
 import os
-from enrollment_schemas import Class, Department, Enrollment, Dropped
+from enrollment_schemas import Class, Enrollment, Dropped
 
 database = "enrollment/enrollment.db"
 
@@ -33,174 +33,135 @@ for female in female_names_list:
 
 # Combind the lists of names
 last = 0
-name = []
+names = []
 for male in mname:
-    name.append(male)
-    name.append(fname[last])
+    names.append(male)
+    names.append(fname[last])
     last += 1
-
-sample_departments = [
-    Department(id=1, name="CHEM"),
-    Department(id=2, name="CPSC"),
-    Department(id=3, name="ENGL"),
-    Department(id=4, name="MATH"),
-    Department(id=5, name="PHYS"),
-    Department(id=6, name="HIST"),
-    Department(id=7, name="BIOL"),
-    Department(id=8, name="GEOL"),
-]
 
 sample_classes = [
     Class(
-        id=1,
         name="Web Back-End Engineering",
         course_code="449",
         section_number=1,
         current_enroll=10,
         max_enroll=30,
         department_id=2,
-        instructor_id=1,
     ),
     Class(
-        id=2,
         name="Web Back-End Engineering",
         course_code="449",
         section_number=2,
         current_enroll=24,
         max_enroll=30,
         department_id=2,
-        instructor_id=2,
     ),
     Class(
-        id=3,
         name="Web Front-End Engineering",
         course_code="349",
         section_number=1,
         current_enroll=14,
         max_enroll=30,
         department_id=2,
-        instructor_id=3,
     ),
     Class(
-        id=4,
         name="Introduction to Computer Science",
         course_code="120",
         section_number=1,
         current_enroll=32,
         max_enroll=30,
         department_id=2,
-        instructor_id=4,
     ),
     Class(
-        id=5,
         name="Calculus I",
         course_code="150A",
         section_number=1,
         current_enroll=28,
         max_enroll=30,
         department_id=4,
-        instructor_id=5,
     ),
     Class(
-        id=6,
         name="Calculus II",
         course_code="150B",
         section_number=1,
         current_enroll=30,
         max_enroll=30,
         department_id=3,
-        instructor_id=6,
     ),
     Class(
-        id=7,
         name="World History",
         course_code="181",
         section_number=1,
         current_enroll=15,
         max_enroll=30,
         department_id=6,
-        instructor_id=7,
     ),
     Class(
-        id=8,
         name="Anatomy & Physiology",
         course_code="211",
         section_number=1,
         current_enroll=30,
         max_enroll=30,
         department_id=7,
-        instructor_id=8,
     ),
     Class(
-        id=9,
         name="Earth Science",
         course_code="171",
         section_number=1,
         current_enroll=28,
         max_enroll=30,
         department_id=8,
-        instructor_id=9,
     ),
     Class(
-        id=10,
         name="Advanced C++",
         course_code="421",
         section_number=1,
         current_enroll=12,
         max_enroll=30,
         department_id=2,
-        instructor_id=10,
     ),
     Class(
-        id=11,
         name="Python Programming",
         course_code="222",
         section_number=1,
         current_enroll=27,
         max_enroll=30,
         department_id=2,
-        instructor_id=11,
     ),
     Class(
-        id=12,
         name="Python Programming",
         course_code="222",
         section_number=2,
         current_enroll=45,
         max_enroll=30,
         department_id=2,
-        instructor_id=12,
     ),
     Class(
-        id=13,
         name="Python Programming",
         course_code="222",
         section_number=3,
         current_enroll=35,
         max_enroll=30,
         department_id=2,
-        instructor_id=13,
     ),
     Class(
-        id=14,
         name="Python Programming",
         course_code="222",
         section_number=4,
         current_enroll=44,
         max_enroll=30,
         department_id=2,
-        instructor_id=14,
     ),
 ]
 
 sample_enrollments = []
 place = 1
 sid = 1
-for class_data in sample_classes:
+for index, class_data in enumerate(sample_classes, start = 1):
     while place <= class_data.current_enroll:
         sample_enrollments.append(Enrollment(
             placement=place,
-            class_id=class_data.id,
+            class_id=index,
             student_id=sid
         ))
         sid += 1
@@ -268,132 +229,196 @@ def populate_database():
     conn = create_connection(database)
 
     department_table = """ CREATE TABLE IF NOT EXISTS department (
-                            id integer NOT NULL PRIMARY KEY UNIQUE,
-                            name text NOT NULL
+                            id integer PRIMARY KEY,
+                            name text
                         ); """
     create_table(conn, department_table)
 
-    instructor_table = """ CREATE TABLE IF NOT EXISTS instructor (
-                            id integer NOT NULL PRIMARY KEY UNIQUE,
-                            name text NOT NULL
+    users_table = """ CREATE TABLE IF NOT EXISTS users (
+                            uid integer PRIMARY KEY,
+                            name text
                         ); """
-    create_table(conn, instructor_table)
+    create_table(conn, users_table)
 
-    student_table = """ CREATE TABLE IF NOT EXISTS student (
-                            id integer NOT NULL PRIMARY KEY UNIQUE,
-                            name text NOT NULL,
-                            waitlist_count integer
+    role_table = """ CREATE TABLE IF NOT EXISTS role (
+                            rid integer PRIMARY KEY,
+                            role text UNIQUE
                         ); """
-    create_table(conn, student_table)
+    create_table(conn, role_table)
+
+    userrole_table = """ CREATE TABLE IF NOT EXISTS user_role (
+                            user_id integer,
+                            role_id integer,
+                            PRIMARY KEY (user_id, role_id),
+                            FOREIGN KEY (user_id) REFERENCES users (uid),
+                            FOREIGN KEY (role_id) REFERENCES roles (rid)
+                        ); """
+    create_table(conn, userrole_table)
 
     class_table = """ CREATE TABLE IF NOT EXISTS class (
-                        id integer NOT NULL PRIMARY KEY UNIQUE,
+                        id integer PRIMARY KEY,
                         name text NOT NULL,
                         course_code text NOT NULL,
                         section_number int NOT NULL,
                         current_enroll integer,
                         max_enroll integer,
                         department_id integer,
-                        instructor_id integer,
-                        FOREIGN KEY(department_id) REFERENCES department(id),
-                        FOREIGN KEY(instructor_id) REFERENCES instructor(id)
+                        FOREIGN KEY (department_id) REFERENCES department (id)
                     ); """
     create_table(conn, class_table)
 
     enrollment_table = """ CREATE TABLE IF NOT EXISTS enrollment (
                             placement integer,
-                            class_id integer,
                             student_id integer,
-                            FOREIGN KEY(class_id) REFERENCES class(id),
-                            FOREIGN KEY(student_id) REFERENCES student(id)
-                    ); """
+                            class_id integer,
+                            PRIMARY KEY (student_id, class_id),
+                            FOREIGN KEY (student_id) REFERENCES users (uid),
+                            FOREIGN KEY (class_id) REFERENCES class (id)
+                            ); """
     create_table(conn, enrollment_table)
+
+    instructorclass_table = """ CREATE TABLE IF NOT EXISTS instructor_class (
+                            instructor_id integer,
+                            class_id integer,
+                            PRIMARY KEY (class_id),
+                            FOREIGN KEY (instructor_id) REFERENCES users (uid),
+                            FOREIGN KEY (class_id) REFERENCES class(id)
+                            ); """
+    create_table(conn, instructorclass_table)
 
 
     dropped_table ="""CREATE TABLE IF NOT EXISTS dropped (
-                    class_id INTEGER NOT NULL,
-                    student_id INTEGER NOT NULL,
-                    FOREIGN KEY(class_id) REFERENCES class(id),
-                    FOREIGN KEY(student_id) REFERENCES student(id)
-                )"""
+                    student_id integer,
+                    class_id integer,
+                    PRIMARY KEY (student_id, class_id),
+                    FOREIGN KEY(student_id) REFERENCES users (id),
+                    FOREIGN KEY(class_id) REFERENCES class (id)
+                    )"""
     create_table(conn, dropped_table)
 
+    waitlist_table ="""CREATE TABLE IF NOT EXISTS waitlist (
+                    student_id integer,
+                    waitlist_count integer,
+                    PRIMARY KEY (student_id),
+                    FOREIGN KEY(student_id) REFERENCES users (id)
+                    )"""
+    create_table(conn, waitlist_table)
+
     cursor = conn.cursor()
-    for department_data in sample_departments:
+    
+    roles = ['student', 'instructor', 'registrar']
+    for role in roles:
         cursor.execute(
             """
-            INSERT INTO department (id, name)
-            VALUES (?, ?)
+            INSERT INTO role (role)
+            VALUES (?)
             """,
-            (department_data.id, department_data.name)
+            (role,)
+        )
+    
+    department = ["CHEM","CPSC","ENGL","MATH","PHYS","HIST","BIOL","GEOL"]
+    for dept in department:
+        cursor.execute(
+            """
+            INSERT INTO department (name)
+            VALUES (?)
+            """,
+            (dept,)
         )
 
-    for index, instructor_name in enumerate(name[500::], start = 1):
+    for index, user_name in enumerate(names, start=1):
         cursor.execute(
             """
-            INSERT INTO instructor (id, name)
-            VALUES (?, ?)
+            INSERT INTO users (name)
+            VALUES (?)
             """,
-            (index, instructor_name)
+            (user_name,)
         )
+        if index <= 500:
+            cursor.execute(
+                """
+                INSERT INTO user_role (user_id, role_id)
+                VALUES (?, ?)
+                """,
+                (index, 1)
+            )
+            cursor.execute(
+                """
+                INSERT INTO waitlist (student_id, waitlist_count)
+                VALUES (?, ?)
+                """,
+                (index, 0)
+            )
+        else:
+            cursor.execute(
+                """
+                INSERT INTO user_role (user_id, role_id)
+                VALUES (?, ?)
+                """,
+                (index, 2)
+            )
+        if index > 550:
+            cursor.execute(
+                """
+                INSERT INTO user_role (user_id, role_id)
+                VALUES (?, ?)
+                """,
+                (index, 3)
+            )
 
-    for index, student_name in enumerate(name[:500:], start = 1):
+    for index, class_data in enumerate(sample_classes, start = 1):
         cursor.execute(
             """
-            INSERT INTO student (id, name, waitlist_count)
-            VALUES (?, ?, ?)
-            """,
-            (index, student_name, 0)
-        )
-
-    for class_data in sample_classes:
-        cursor.execute(
-            """
-            INSERT INTO class (id, name, course_code, section_number, current_enroll, max_enroll, department_id, instructor_id)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO class (name, course_code, section_number, current_enroll, max_enroll, department_id)
+            VALUES (?, ?, ?, ?, ?, ?)
             """,
             (
-                class_data.id,
                 class_data.name,
                 class_data.course_code,
                 class_data.section_number,
                 class_data.current_enroll,
                 class_data.max_enroll,
                 class_data.department_id,
-                class_data.instructor_id
             )
+        )
+        cursor.execute(
+            """
+            INSERT INTO instructor_class (instructor_id, class_id)
+            VALUES (?, ?)
+            """,
+            (index+500, index)
         )
 
     for enrollment_data in sample_enrollments:
         if enrollment_data.placement > 30:
             cursor.execute(
                 """
-                UPDATE student SET waitlist_count = 1
-                WHERE id = (?)
+                UPDATE waitlist SET waitlist_count = 1
+                WHERE student_id = (?)
                 """,
                 (enrollment_data.student_id,)
             )
         cursor.execute(
             """
-            INSERT INTO enrollment (placement, class_id, student_id)
+            INSERT INTO enrollment (placement, student_id, class_id)
             VALUES (?, ?, ?)
             """,
             (
             enrollment_data.placement,
-            enrollment_data.class_id,
-            enrollment_data.student_id
+            enrollment_data.student_id,
+            enrollment_data.class_id
             )
         )
 
     for dropped_data in sample_dropped:
         cursor.execute(
             """
-            INSERT INTO dropped (class_id, student_id)
+            INSERT INTO dropped (student_id, class_id)
             VALUES (?, ?)
             """,
             (
-            dropped_data.class_id,
-            dropped_data.student_id
+            dropped_data.student_id,
+            dropped_data.class_id
             )
         )
     
@@ -407,8 +432,8 @@ def populate_database():
     )
     cursor.execute(
         """
-        INSERT INTO enrollment (placement, class_id, student_id)
-        VALUES (31, 8, 1)
+        INSERT INTO enrollment (placement, student_id, class_id)
+        VALUES (31, 1, 8)
         """
     )
     cursor.execute(
@@ -419,8 +444,8 @@ def populate_database():
     )
     cursor.execute(
         """
-        INSERT INTO enrollment (placement, class_id, student_id)
-        VALUES (33, 4, 1)
+        INSERT INTO enrollment (placement, student_id, class_id)
+        VALUES (33, 1, 4)
         """
     )
     cursor.execute(
@@ -431,14 +456,14 @@ def populate_database():
     )
     cursor.execute(
         """
-        INSERT INTO enrollment (placement, class_id, student_id)
-        VALUES (36, 13, 1)
+        INSERT INTO enrollment (placement, student_id, class_id)
+        VALUES (36, 1, 13)
         """
     )
     cursor.execute(
         """
-        UPDATE student SET waitlist_count = 3
-        WHERE id = 1
+        UPDATE waitlist SET waitlist_count = 3
+        WHERE student_id = 1
         """
     )
 
