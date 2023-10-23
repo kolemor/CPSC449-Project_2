@@ -35,15 +35,23 @@ def show_db(c):
     print('\n'+query)
     select_query(c, query)
 
-    query = "SELECT * FROM instructor"
+    query = "SELECT * FROM users"
     print('\n'+query)
     select_query(c, query)
 
-    query = "SELECT * FROM student"
+    query = "SELECT * FROM role"
+    print('\n'+query)
+    select_query(c, query)
+    
+    query = "SELECT * FROM user_role"
     print('\n'+query)
     select_query(c, query)
 
     query = "SELECT * FROM class"
+    print('\n'+query)
+    select_query(c, query)
+
+    query = "SELECT * FROM instructor_class"
     print('\n'+query)
     select_query(c, query)
 
@@ -54,7 +62,10 @@ def show_db(c):
     query = "SELECT * FROM dropped"
     print('\n'+query)
     select_query(c, query)
-
+    
+    query = "SELECT * FROM waitlist"
+    print('\n'+query)
+    select_query(c, query)
 
 def start():
     database = "enrollment/enrollment.db"

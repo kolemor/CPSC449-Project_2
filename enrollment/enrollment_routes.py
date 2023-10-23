@@ -1,8 +1,11 @@
 import contextlib
 import sqlite3
+import typing
+import collections
 
 from fastapi import Depends, HTTPException, APIRouter, status
-from enrollment.enrollment_schemas import Class
+from typing import List
+from enrollment.enrollment_schemas import *
 
 router = APIRouter()
 dropped = []
@@ -31,19 +34,40 @@ def reorder_placement(cur, total_enrolled, placement, class_id):
                 WHERE id = ?""",(class_id,))
 
 
+# Used for the search endpoint
+SearchParam = collections.namedtuple("SearchParam", ["name", "operator"])
+SEARCH_PARAMS = [
+    SearchParam(
+        "uid",
+        "=",
+    ),
+    SearchParam(
+        "name",
+        "LIKE",
+    ),
+    SearchParam(
+        "role",
+        "LIKE",
+    ),
+]
+
+
 #==========================================students==================================================
 
 
 #gets available classes for a student
-@router.get("/students/{student_id}/classes", tags=['Student']) 
+@router.get("/students/{student_id}/classes", response_model=List[Class_Info], tags=['Student']) 
 def get_available_classes(student_id: int, db: sqlite3.Connection = Depends(get_db)):
     cursor = db.cursor()
     # Fetch student data from db
     cursor.execute(
         """
-        SELECT * FROM student
-        WHERE id = ?
-        """, (student_id,)
+        SELECT * FROM users
+        JOIN user_role ON users.uid = user_role.user_id
+        JOIN role ON user_role.role_id = role.rid
+        JOIN waitlist ON users.uid = waitlist.student_id
+        WHERE uid = ? AND role = ?
+        """, (student_id, 'student')
     )
     student_data = cursor.fetchone()
     #Check if exist
@@ -54,58 +78,50 @@ def get_available_classes(student_id: int, db: sqlite3.Connection = Depends(get_
     # If max waitlist, don't show full classes with open waitlists
     if student_data['waitlist_count'] >= MAX_WAITLIST:
         cursor.execute("""
-            SELECT class.id, class.name, class.course_code, class.section_number, class.current_enroll, class.max_enroll,
+            SELECT class.id AS class_id, class.name AS class_name, class.course_code,
+                class.section_number, class.current_enroll, class.max_enroll,
                 department.id AS department_id, department.name AS department_name,
-                instructor.id AS instructor_id, instructor.name AS instructor_name
+                users.uid AS instructor_id, users.name AS instructor_name
             FROM class
-            INNER JOIN department ON class.department_id = department.id
-            INNER JOIN instructor ON class.instructor_id = instructor.id
-            WHERE class.current_enroll < class.max_enroll   
+            JOIN department ON class.department_id = department.id
+            JOIN instructor_class ON class.id = instructor_class.class_id
+            JOIN users ON instructor_class.instructor_id = users.uid
+            WHERE class.current_enroll < class.max_enroll
         """)
     # Else show all open classes or full classes with open waitlists
     else:
         cursor.execute("""
-            SELECT class.id, class.name, class.course_code, class.section_number, class.current_enroll, class.max_enroll,
+            SELECT class.id AS class_id, class.name AS class_name, class.course_code,
+                class.section_number, class.current_enroll, class.max_enroll,
                 department.id AS department_id, department.name AS department_name,
-                instructor.id AS instructor_id, instructor.name AS instructor_name
+                users.uid AS instructor_id, users.name AS instructor_name
             FROM class
-            INNER JOIN department ON class.department_id = department.id
-            INNER JOIN instructor ON class.instructor_id = instructor.id
+            JOIN department ON class.department_id = department.id
+            JOIN instructor_class ON class.id = instructor_class.class_id
+            JOIN users ON instructor_class.instructor_id = users.uid
             WHERE class.current_enroll < class.max_enroll + 15   
         """)
 
     class_data = cursor.fetchall()
 
-    return {"Classes" : class_data}
+    # Create a list to store the Class_Info instances
+    class_info_list = []
 
+    # Iterate through the query results and create Class_Info instances
+    for row in class_data:
+        class_info = Class_Info(
+            id=row['class_id'],
+            name=row['class_name'],
+            course_code=row['course_code'],
+            section_number=row['section_number'],
+            current_enroll=row['current_enroll'],
+            max_enroll=row['max_enroll'],
+            department=Department(id=row['department_id'], name=row['department_name']),
+            instructor=Instructor(id=row['instructor_id'], name=row['instructor_name'])
+        )
+        class_info_list.append(class_info)
 
-#gets currently enrolled classes for a student
-@router.get("/students/{student_id}/enrolled", tags=['Student'])
-def view_enrolled_classes(student_id: int, db: sqlite3.Connection = Depends(get_db)):
-    cursor = db.cursor()
-    
-    # Check if the student exists in the database
-    cursor.execute("SELECT * FROM student WHERE id = ?", (student_id,))
-    student_data = cursor.fetchone()
-
-    if not student_data:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Student not found")
-
-    # Check if the student is enrolled in any classes
-    cursor.execute("""
-        SELECT class.id, department.name AS department_name, class.course_code, class.section_number, class.name AS class_name, class.current_enroll
-            FROM enrollment
-            JOIN class ON enrollment.class_id = class.id
-            JOIN student ON enrollment.student_id = student.id
-            JOIN department ON class.department_id = department.id
-            WHERE student.id = ? AND class.current_enroll < class.max_enroll
-        """, (student_id,))
-    student_data = cursor.fetchall()
-    
-    if not student_data:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Student not enrolled in any classes")
-    
-    return {"Enrolled": student_data}
+    return class_info_list
 
 
 # Enrolls a student into an available class,
@@ -114,8 +130,17 @@ def view_enrolled_classes(student_id: int, db: sqlite3.Connection = Depends(get_
 def enroll_student_in_class(student_id: int, class_id: int, db: sqlite3.Connection = Depends(get_db)):
     cursor = db.cursor()
 
+    cursor = db.cursor()
     # Check if the student exists in the database
-    cursor.execute("SELECT * FROM student WHERE id = ?", (student_id,))
+    cursor.execute(
+        """
+        SELECT * FROM users
+        JOIN user_role ON users.uid = user_role.user_id
+        JOIN role ON user_role.role_id = role.rid
+        JOIN waitlist ON users.uid = waitlist.student_id
+        WHERE uid = ? AND role = ?
+        """, (student_id, 'student')
+    )
     student_data = cursor.fetchone()
 
     # Check if the class exists in the database
@@ -129,33 +154,18 @@ def enroll_student_in_class(student_id: int, class_id: int, db: sqlite3.Connecti
     cursor.execute("""SELECT * FROM enrollment
                     JOIN class ON enrollment.class_id = class.id
                     WHERE class_id = ? AND student_id = ?
-                    AND class.current_enroll <= class.max_enroll
                     """, (class_id, student_id))
     existing_enrollment = cursor.fetchone()
 
     if existing_enrollment:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Student is already enrolled in this class")
-    
-    # Check if the class is full, add student to waitlist if no
-    # freeze is in place
-    if class_data['current_enroll'] >= class_data['max_enroll']:
-        if not FREEZE:
-            if student_data['waitlist_count'] < MAX_WAITLIST:
-                cursor.execute("""UPDATE student 
-                                SET waitlist_count = waitlist_count + 1
-                                WHERE id = ?""",(student_id,))
-                return {"message": "Student added to the waitlist"}
-            else:
-                return {"message": "Unable to add student to waitlist due to already having max number of waitlists"}
-        else:
-            return {"message": "Unable to add student to waitlist due to administrative freeze"}
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Student is already enrolled in this class or currently on waitlist")
     
     # Increment enrollment number in the database
     new_enrollment = class_data['current_enroll'] + 1
     cursor.execute("UPDATE class SET current_enroll = ? WHERE id = ?", (new_enrollment, class_id))
 
     # Add student to enrolled class in the database
-    cursor.execute("INSERT INTO enrollment (placement, class_id, student_id) VALUES (?, ?, ?)", (new_enrollment, class_id, student_id))
+    cursor.execute("INSERT INTO enrollment (placement, student_id, class_id) VALUES (?, ?, ?)", (new_enrollment, student_id, class_id))
     
     # Remove student from dropped table if valid
     cursor.execute("""SELECT * FROM dropped 
@@ -166,14 +176,25 @@ def enroll_student_in_class(student_id: int, class_id: int, db: sqlite3.Connecti
         cursor.execute("""DELETE FROM dropped 
                     WHERE class_id = ? AND student_id = ?
                     """, (class_id, student_id))
+
+    # Check if the class is full, add student to waitlist if no
+    # freeze is in place
+    if class_data['current_enroll'] >= class_data['max_enroll']:
+        if not FREEZE:
+            if student_data['waitlist_count'] < MAX_WAITLIST and class_data['current_enroll'] < class_data['max_enroll'] + 15:
+                cursor.execute("""UPDATE waitlist 
+                                SET waitlist_count = waitlist_count + 1
+                                WHERE student_id = ?""",(student_id,))
+                db.commit()
+                return {"message": "Student added to the waitlist"}
+            else:
+                return {"message": "Unable to add student to waitlist due to already having max number of waitlists"}
+        else:
+            return {"message": "Unable to add student to waitlist due to administrative freeze"}
     
     db.commit()
 
-    # Fetch the updated class data from the database
-    cursor.execute("SELECT * FROM class WHERE id = ?", (class_id,))
-    updated_class_data = cursor.fetchone()
-
-    return updated_class_data
+    return {"message": "Student succesfully enrolled in class"}
 
 
 # Have a student drop a class they're enrolled in
@@ -182,7 +203,14 @@ def drop_student_from_class(student_id: int, class_id: int, db: sqlite3.Connecti
     cursor = db.cursor()
 
     # check if exist
-    cursor.execute("SELECT * FROM student WHERE id = ?", (student_id,))
+    cursor.execute(
+        """
+        SELECT * FROM users
+        JOIN user_role ON users.uid = user_role.user_id
+        JOIN role ON user_role.role_id = role.rid
+        WHERE uid = ? AND role = ?
+        """, (student_id, 'student')
+    )
     student_data = cursor.fetchone()
 
     cursor.execute("SELECT * FROM class WHERE id = ?", (class_id,))
@@ -197,11 +225,11 @@ def drop_student_from_class(student_id: int, class_id: int, db: sqlite3.Connecti
 
     cursor.execute("""SELECT * FROM enrollment
                     JOIN class ON enrollment.class_id = class.id
-                    WHERE enrollment.student_id = ?
-                    AND enrollment.placement > class.max_enroll""", (student_id,))
+                    WHERE enrollment.student_id = ? AND class_id = ?
+                    AND enrollment.placement > class.max_enroll""", (student_id, class_id))
     waitlist_data = cursor.fetchone()
     
-    if not enrollment_data or not waitlist_data:
+    if not enrollment_data or waitlist_data:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Student is not enrolled in the class")
 
     # remove student from class
@@ -213,38 +241,10 @@ def drop_student_from_class(student_id: int, class_id: int, db: sqlite3.Connecti
                     VALUES (?, ?)""",(class_id, student_id))
     db.commit()
     
-    # Fetch data to return
-    cursor.execute("""SELECT * FROM dropped
-                    WHERE class_id = ? and student_id = ?""",(class_id, student_id))
-    dropped_data = cursor.fetchone() 
-    return dropped_data
+    return {"message": "Student successfully dropped class"}
 
 
 #==========================================wait list========================================== 
-
-
-# Get all classes with waiting lists
-@router.get("/waitlist/classes", tags=['Waitlist'])
-def view_all_class_waitlists(db: sqlite3.Connection = Depends(get_db)):
-    cursor = db.cursor()  
-
-    # fetch all relevant waitlist information for student
-    cursor.execute("""
-        SELECT class.id AS class_id, department.id AS department_id, class.course_code, 
-        class.section_number, class.name AS class_name, instructor.id AS instructor_id,
-        class.current_enroll - class.max_enroll AS waitlist_total
-        FROM class
-        JOIN department ON class.department_id = department.id
-        JOIN instructor ON class.instructor_id = instructor.id
-        WHERE class.current_enroll > class.max_enroll
-        """
-    )
-    waitlist_data = cursor.fetchall()
-    # Check if exist
-    if not waitlist_data:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No classes have waitlists")
-
-    return {"Waitlists": waitlist_data}
 
 
 # Get all waiting lists for a student
@@ -253,7 +253,7 @@ def view_waiting_list(student_id: int, db: sqlite3.Connection = Depends(get_db))
     cursor = db.cursor()
 
     # Retrieve waitlist entries for the specified student from the database
-    cursor.execute("SELECT waitlist_count FROM student WHERE id = ? AND waitlist_count > 0", (student_id,))
+    cursor.execute("SELECT waitlist_count FROM waitlist WHERE student_id = ? AND waitlist_count > 0", (student_id,))
     waitlist_data = cursor.fetchall()
 
     # Check if exist
@@ -262,20 +262,38 @@ def view_waiting_list(student_id: int, db: sqlite3.Connection = Depends(get_db))
 
     # fetch all relevant waitlist information for student
     cursor.execute("""
-        SELECT class.id, department.name AS department_name, class.course_code, 
-        class.section_number, class.name AS class_name, instructor.name AS instructor_name,
-        enrollment.placement - class.max_enroll AS waitlist_placement
+        SELECT class.id AS class_id, class.name AS class_name, class.course_code,
+                class.section_number, department.id AS department_id,
+                department.name AS department_name,
+                users.uid AS instructor_id, users.name AS instructor_name,
+                enrollment.placement - class.max_enroll AS waitlist_position
         FROM enrollment
         JOIN class ON enrollment.class_id = class.id
-        JOIN student ON enrollment.student_id = student.id
+        JOIN users ON enrollment.student_id = users.uid
         JOIN department ON class.department_id = department.id
-        JOIN instructor ON class.instructor_id = instructor.id
-        WHERE student.id = ? AND class.current_enroll > class.max_enroll
+        JOIN instructor_class ON class.id = instructor_class.class_id
+        WHERE users.uid = ? AND class.current_enroll > class.max_enroll
         """, (student_id,)
     )
     waitlist_data = cursor.fetchall()
 
-    return {"Waitlists": waitlist_data}
+    # Create a list to store the Waitlist_Student instances
+    waitlist_list = []
+
+    # Iterate through the query results and create Waitlist_Student instances
+    for row in waitlist_data:
+        waitlist_info = Waitlist_Student(
+            id=row['class_id'],
+            name=row['class_name'],
+            course_code=row['course_code'],
+            section_number=row['section_number'],
+            department=Department(id=row['department_id'], name=row['department_name']),
+            instructor=Instructor(id=row['instructor_id'], name=row['instructor_name']),
+            waitlist_position=row['waitlist_position']
+        )
+        waitlist_list.append(waitlist_info)
+
+    return {"Waitlists": waitlist_list}
 
 
 # remove a student from a waiting list
@@ -284,7 +302,14 @@ def remove_from_waitlist(student_id: int, class_id: int, db: sqlite3.Connection 
     cursor = db.cursor()
     
     # check if exist
-    cursor.execute("SELECT * FROM student WHERE id = ?", (student_id,))
+    cursor.execute(
+        """
+        SELECT * FROM users
+        JOIN user_role ON users.uid = user_role.user_id
+        JOIN role ON user_role.role_id = role.rid
+        WHERE uid = ? AND role = ?
+        """, (student_id, 'student')
+    )
     student_data = cursor.fetchone()
 
     cursor.execute("SELECT * FROM class WHERE id = ?", (class_id,))
@@ -292,16 +317,11 @@ def remove_from_waitlist(student_id: int, class_id: int, db: sqlite3.Connection 
 
     if not student_data or not class_data:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Student or Class not found")
-    
-    cursor.execute("SELECT * FROM student WHERE id = ? AND waitlist_count > 0", (student_id,))
-    student_data = cursor.fetchone()
 
-    if not student_data:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Student is not on the waitlist")
-
-    cursor.execute("""SELECT enrollment.placement, class.current_enroll
+    cursor.execute("""SELECT class.current_enroll, enrollment.placement
                     FROM enrollment 
                     JOIN class ON enrollment.class_id = class.id
+                    JOIN users ON enrollment.student_id
                     WHERE student_id = ? AND class_id = ?
                     AND enrollment.placement > class.max_enroll
                     """, (student_id, class_id))
@@ -312,14 +332,15 @@ def remove_from_waitlist(student_id: int, class_id: int, db: sqlite3.Connection 
 
     # Delete student from waitlist enrollment
     cursor.execute("DELETE FROM enrollment WHERE student_id = ? AND class_id = ?", (student_id, class_id))
-    cursor.execute("""UPDATE student SET waitlist_count = waitlist_count - 1
-                    WHERE id = ?""", (student_id,))
+    cursor.execute("""UPDATE waitlist SET waitlist_count = waitlist_count - 1
+                    WHERE student_id = ?""", (student_id,))
     
     # Reorder enrollment placements
     reorder_placement(cursor, waitlist_entry['current_enroll'], waitlist_entry['placement'], class_id)
     db.commit()
 
     return {"message": "Student removed from the waiting list"}
+
 
 # Get a list of students on a waitlist for a particular class that
 # a specific instructor teaches
@@ -328,7 +349,14 @@ def view_current_waitlist(instructor_id: int, class_id: int, db: sqlite3.Connect
     cursor = db.cursor()
 
    # check if exist
-    cursor.execute("SELECT * FROM instructor WHERE id = ?", (instructor_id,))
+    cursor.execute(
+        """
+        SELECT * FROM users
+        JOIN user_role ON users.uid = user_role.user_id
+        JOIN role ON user_role.role_id = role.rid
+        WHERE uid = ? AND role = ?
+        """, (instructor_id, 'instructor')
+    )
     instructor_data = cursor.fetchone()
 
     cursor.execute("SELECT * FROM class WHERE id = ?", (class_id,))
@@ -337,18 +365,30 @@ def view_current_waitlist(instructor_id: int, class_id: int, db: sqlite3.Connect
     if not instructor_data or not class_data:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Instructor or Class not found")  
 
+    cursor.execute(
+        """
+        SELECT * FROM instructor_class
+        WHERE instructor_id = ? AND class_id = ?
+        """, (instructor_id, class_id)
+    )
+    instructor_class_data = cursor.fetchone()
+
+    if not instructor_class_data:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Instructor not assigned to this class")
+    
     # fetch all relevant waitlist information for instructor
     cursor.execute("""
-        SELECT class.id AS class_id, department.name AS department_name, class.course_code, 
-        class.section_number, class.name AS class_name, enrollment.student_id AS student_id, 
-        enrollment.placement - class.max_enroll AS waitlist_placement
+        SELECT enrollment.student_id AS student_id,
+        users.name AS student_name,
+        enrollment.placement - class.max_enroll AS waitlist_position
         FROM enrollment
+        JOIN users ON enrollment.student_id = users.uid
         JOIN class ON enrollment.class_id = class.id
+        JOIN instructor_class ON class.id = instructor_class.class_id
         JOIN department ON class.department_id = department.id
-        JOIN instructor ON class.instructor_id = instructor.id
-        WHERE instructor.id = ? AND class.current_enroll > class.max_enroll
+        WHERE instructor_class.instructor_id = ? AND class.id = ?
         AND enrollment.placement > class.max_enroll
-        """, (instructor_id,)
+        """, (instructor_id, class_id)
     )
     waitlist_data = cursor.fetchall()
 
@@ -356,7 +396,18 @@ def view_current_waitlist(instructor_id: int, class_id: int, db: sqlite3.Connect
     if not waitlist_data:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Class does not have a waitlist")
 
-    return {"Waitlist": waitlist_data}
+    # Create a list to store the Waitlist_Instructor instances
+    waitlist_list = []
+
+    # Iterate through the query results and create Waitlist_Instructor instances
+    for row in waitlist_data:
+        waitlist_info = Waitlist_Instructor(
+            student=Student(id=row['student_id'], name=row['student_name']),
+            waitlist_position=row['waitlist_position']
+        )
+        waitlist_list.append(waitlist_info)
+
+    return {"Waitlist": waitlist_list}
 
 
 #==========================================Instructor==================================================
@@ -368,7 +419,14 @@ def get_instructor_enrollment(instructor_id: int, class_id: int, db: sqlite3.Con
     cursor = db.cursor()
 
     #check if exist
-    cursor.execute("SELECT * FROM instructor WHERE id = ?", (instructor_id,))
+    cursor.execute(
+        """
+        SELECT * FROM users
+        JOIN user_role ON users.uid = user_role.user_id
+        JOIN role ON user_role.role_id = role.rid
+        WHERE uid = ? AND role = ?
+        """, (instructor_id, 'instructor')
+    )
     instructor_data = cursor.fetchone()
 
     cursor.execute("SELECT * FROM class WHERE id = ?", (class_id,))
@@ -377,26 +435,46 @@ def get_instructor_enrollment(instructor_id: int, class_id: int, db: sqlite3.Con
     if not instructor_data or not class_data:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Instructor and/or class not found")
 
-    cursor.execute("SELECT * FROM class WHERE id = ? AND instructor_id = ?", (class_id,instructor_id))
-    assigned_data = cursor.fetchone()
+    cursor.execute(
+        """
+        SELECT * FROM instructor_class
+        WHERE instructor_id = ? AND class_id = ?
+        """, (instructor_id, class_id)
+    )
+    instructor_class_data = cursor.fetchone()
 
-    if not assigned_data:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Instructor not assigned to Class")
+    if not instructor_class_data:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Instructor not assigned to this class")
 
     #Fetch relavent data for instructor
-    cursor.execute("""SELECT class.id AS class_id, class.name AS class_name, department.name AS department_name,
-                    class.course_code, class.section_number, class.max_enroll,
-                    student.id AS student_id, student.name AS student_name, enrollment.placement
+    cursor.execute("""SELECT users.uid AS student_id,
+                    users.name AS student_name, enrollment.placement
                     FROM enrollment 
                     JOIN class ON enrollment.class_id = class.id
-                    JOIN student ON enrollment.student_id = student.id
-                    JOIN department ON class.department_id = department.id
-                    JOIN instructor ON class.instructor_id = instructor.id
-                    WHERE class.instructor_id = ? AND enrollment.class_id = ? 
-                    AND enrollment.placement <= class.max_enroll""", (instructor_id, class_id))
+                    JOIN users ON enrollment.student_id = users.uid
+                    JOIN instructor_class ON class.id = instructor_class.class_id
+                    WHERE instructor_class.instructor_id = ?
+                    AND instructor_class.class_id = ? 
+                    AND enrollment.placement <= class.max_enroll
+                    AND class.current_enroll > 0""", (instructor_id, class_id))
     enrolled_data = cursor.fetchall()
 
-    return {"Enrolled" : enrolled_data}
+    #Check if exist
+    if not enrolled_data:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Class has no students enrolled")
+
+    # Create a list to store the Waitlist_Instructor instances
+    enrolled_list = []
+
+    # Iterate through the query results and create Waitlist_Instructor instances
+    for row in enrolled_data:
+        enrolled_info = Enrolled(
+            student=Student(id=row['student_id'], name=row['student_name']),
+            position=row['placement']
+        )
+        enrolled_list.append(enrolled_info)
+
+    return {"Enrolled": enrolled_list}
 
 
 #view students who have dropped the class
@@ -405,27 +483,55 @@ def get_instructor_dropped(instructor_id: int, class_id: int, db: sqlite3.Connec
     cursor = db.cursor()
 
     #Check if exist
-    cursor.execute("SELECT * FROM instructor WHERE id = ?", (instructor_id,))
+    cursor.execute(
+        """
+        SELECT * FROM users
+        JOIN user_role ON users.uid = user_role.user_id
+        JOIN role ON user_role.role_id = role.rid
+        WHERE uid = ? AND role = ?
+        """, (instructor_id, 'instructor')
+    )
     instructor_data = cursor.fetchone()
+
     cursor.execute("SELECT * FROM class WHERE id = ?", (class_id,))
     class_data = cursor.fetchone()
 
     if not instructor_data or not class_data:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Instructor and/or class not found")
 
-    cursor.execute("SELECT * FROM class WHERE id = ? AND instructor_id = ?", (class_id,instructor_id))
-    assigned_data = cursor.fetchone()
+    cursor.execute(
+        """
+        SELECT * FROM instructor_class
+        WHERE instructor_id = ? AND class_id = ?
+        """, (instructor_id, class_id)
+    )
+    instructor_class_data = cursor.fetchone()
 
-    if not assigned_data:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Instructor not assigned to Class")
+    if not instructor_class_data:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Instructor not assigned to this class")
     
-    cursor.execute("""SELECT student.id AS student_id, student.name AS student_name
+    cursor.execute("""SELECT dropped.student_id AS student_id, users.name AS student_name
                         FROM dropped 
-                        JOIN student ON dropped.student_id = student.id
+                        JOIN users ON dropped.student_id = users.uid
                         WHERE dropped.class_id = ?""", (class_id,))
     dropped_data = cursor.fetchall()
+
+    #Check if exist
+    if not dropped_data:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Class has no dropped students")
+
+    # Create a list to store the Student instances
+    dropped_list = []
+
+    # Iterate through the query results and create Waitlist_Instructor instances
+    for row in dropped_data:
+        student_info = Student(
+            id=row['student_id'],
+            name=row['student_name']
+        )
+        dropped_list.append(student_info)
     
-    return {"Dropped": dropped_data}
+    return {"Dropped": dropped_list}
 
 
 #Instructor administratively drop students
@@ -434,75 +540,112 @@ def instructor_drop_class(instructor_id: int, class_id: int, student_id: int, db
     cursor = db.cursor()
 
     #Check if exist
-    cursor.execute("SELECT * FROM instructor WHERE id = ?", (instructor_id,))
+    cursor.execute(
+        """
+        SELECT * FROM users
+        JOIN user_role ON users.uid = user_role.user_id
+        JOIN role ON user_role.role_id = role.rid
+        WHERE uid = ? AND role = ?
+        """, (instructor_id, 'instructor')
+    )
     instructor_data = cursor.fetchone()
     
-    cursor.execute("SELECT * FROM student WHERE id = ?", (student_id,))
+    cursor.execute(
+        """
+        SELECT * FROM users
+        JOIN user_role ON users.uid = user_role.user_id
+        JOIN role ON user_role.role_id = role.rid
+        JOIN waitlist ON users.uid = waitlist.student_id
+        WHERE uid = ? AND role = ?
+        """, (student_id, 'student')
+    )
     student_data = cursor.fetchone()
 
     if not instructor_data or not student_data:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Instructor and/or student not found")
 
-    cursor.execute("SELECT * FROM class WHERE id = ? AND instructor_id = ?", (class_id, instructor_id))
-    target_class_data = cursor.fetchone()
+    cursor.execute(
+        """
+        SELECT * FROM instructor_class
+        WHERE instructor_id = ? AND class_id = ?
+        """, (instructor_id, class_id)
+    )
+    instructor_class_data = cursor.fetchone()
 
-    if not target_class_data:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Class not found or instructor is not teaching this class")
+    if not instructor_class_data:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Class not found, or instructor not assigned to this class")
 
     cursor.execute("""SELECT * FROM enrollment
+                        JOIN class ON enrollment.class_id = class.id
                         WHERE class_id = ? AND student_id = ?
                     """,(class_id, student_id))
     enroll_data = cursor.fetchone()
+
     if not enroll_data:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Student not enrolled in class")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Student not enrolled in this class")
     
     # remove student from class
     cursor.execute("DELETE FROM enrollment WHERE student_id = ? AND class_id = ?", (student_id, class_id))
-    reorder_placement(cursor, target_class_data['current_enroll'], enroll_data['placement'], class_id)
+    reorder_placement(cursor, enroll_data['current_enroll'], enroll_data['placement'], class_id)
 
     db.commit()
 
-    #Fetch relavent data for instructor
-    cursor.execute("""SELECT class.id AS class_id, class.name AS class_name, department.name AS department_name,
-                    class.course_code, class.section_number, class.max_enroll,
-                    student.id AS student_id, student.name AS student_name, enrollment.placement
-                    FROM enrollment 
-                    JOIN class ON enrollment.class_id = class.id
-                    JOIN student ON enrollment.student_id = student.id
-                    JOIN department ON class.department_id = department.id
-                    JOIN instructor ON class.instructor_id = instructor.id
-                    WHERE class.instructor_id = ? AND enrollment.class_id = ? 
-                    AND enrollment.placement <= class.max_enroll""", (instructor_id, class_id))
-    enrolled_data = cursor.fetchall()
-    
-    return {"Enrollment" : enrolled_data}
+    return {"Message" : "Student successfully dropped"}
 
 
 #==========================================registrar==================================================
 
 
 # Create a new class
-@router.post("/registrar/classes/", response_model=Class, tags=['Registrar'])
-def create_class(class_data: Class, db: sqlite3.Connection = Depends(get_db)):
+@router.post("/registrar/classes/", tags=['Registrar'])
+def create_class(class_data: Class_Registrar, db: sqlite3.Connection = Depends(get_db)):
     try:
-        db.execute(
+        cursor = db.cursor()
+
+        cursor.execute(
             """
-            INSERT INTO class (id, name, course_code, section_number, current_enroll, max_enroll, department_id, instructor_id)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO class (name, course_code, section_number, current_enroll, max_enroll, department_id)
+            VALUES (?, ?, ?, ?, ?, ?)
             """,
             (
-                class_data.id,
                 class_data.name,
                 class_data.course_code,
                 class_data.section_number,
                 class_data.current_enroll,
                 class_data.max_enroll,
                 class_data.department_id,
-                class_data.instructor_id
+            )
+        )
+        
+        # Get the last inserted row id (the id of the newly created class)
+        class_id = cursor.lastrowid
+
+        cursor.execute(
+            """
+            INSERT INTO instructor_class (instructor_id, class_id)
+            VALUES (?, ?)
+            """,
+            (
+                class_data.instructor_id,
+                class_id,
             )
         )
         db.commit()
-        return class_data
+
+        # Construct the response JSON object
+        response_data = {
+            "class_id": class_id,
+            "name": class_data.name,
+            "course_code": class_data.course_code,
+            "section_number": class_data.section_number,
+            "current_enroll": class_data.current_enroll,
+            "max_enroll": class_data.max_enroll,
+            "department_id": class_data.department_id,
+            "instructor_id": class_data.instructor_id
+        }
+        
+        return response_data
+    
     except sqlite3.IntegrityError as e:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
@@ -516,9 +659,9 @@ def remove_class(class_id: int, db: sqlite3.Connection = Depends(get_db)):
 
     # Check if the class exists in the database
     cursor.execute("SELECT * FROM class WHERE id = ?", (class_id,))
-    target_class_data = cursor.fetchone()
+    class_data = cursor.fetchone()
 
-    if not target_class_data:
+    if not class_data:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Class not found")
 
     # Delete the class from the database
@@ -534,18 +677,25 @@ def change_instructor(class_id: int, instructor_id: int, db: sqlite3.Connection 
     cursor = db.cursor()
 
     cursor.execute("SELECT * FROM class WHERE id = ?", (class_id,))
-    target_class_data = cursor.fetchone()
+    class_data = cursor.fetchone()
 
-    if not target_class_data:
+    if not class_data:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Class not found")
 
-    cursor.execute("SELECT * FROM instructor WHERE id = ?", (instructor_id,))
+    cursor.execute(
+        """
+        SELECT * FROM users
+        JOIN user_role ON users.uid = user_role.user_id
+        JOIN role ON user_role.role_id = role.rid
+        WHERE uid = ? AND role = ?
+        """, (instructor_id, 'instructor')
+    )
     instructor_data = cursor.fetchone()
 
     if not instructor_data:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Instructor not found")
 
-    cursor.execute("UPDATE class SET instructor_id = ? WHERE id = ?", (instructor_id, class_id))
+    cursor.execute("UPDATE instructor_class SET instructor_id = ? WHERE class_id = ?", (instructor_id, class_id))
     db.commit()
 
     return {"message": "Instructor changed successfully"}
@@ -561,3 +711,213 @@ def freeze_automatic_enrollment():
     else:
         FREEZE = True
         return {"message": "Automatic enrollment frozen successfully"}
+
+
+#==========================================Test Endpoints==================================================
+
+# None of the following endpoints are required (I assume), but might be helpful
+# for testing purposes
+
+# Gets currently enrolled classes for a student
+@router.get("/debug/students/{student_id}/enrolled", tags=['Debug'])
+def view_enrolled_classes(student_id: int, db: sqlite3.Connection = Depends(get_db)):
+    cursor = db.cursor()
+    
+    # Check if the student exists in the database
+    cursor.execute(
+        """
+        SELECT * FROM users
+        JOIN user_role ON users.uid = user_role.user_id
+        JOIN role ON user_role.role_id = role.rid
+        JOIN waitlist ON users.uid = waitlist.student_id
+        WHERE uid = ? AND role = ?
+        """, (student_id, 'student')
+    )
+    student_data = cursor.fetchone()
+
+    if not student_data:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Student not found")
+
+    # Check if the student is enrolled in any classes
+    cursor.execute("""
+        SELECT class.id AS class_id, class.name AS class_name, class.course_code,
+                class.section_number, class.current_enroll, class.max_enroll,
+                department.id AS department_id, department.name AS department_name,
+                users.uid AS instructor_id, users.name AS instructor_name
+            FROM class
+            JOIN department ON class.department_id = department.id
+            JOIN instructor_class ON class.id = instructor_class.class_id
+            JOIN users ON instructor_class.instructor_id = users.uid
+            JOIN enrollment ON class.id = enrollment.class_id
+            WHERE enrollment.student_id = ? AND class.current_enroll < class.max_enroll
+        """, (student_id,))
+    enrolled_data = cursor.fetchall()
+
+    if not enrolled_data:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Student not enrolled in any classes")
+
+    # Create a list to store the Class_Info instances
+    enrolled_list = []
+
+    # Iterate through the query results and create Class_Info instances
+    for row in enrolled_data:
+        class_info = Class_Info(
+            id=row['class_id'],
+            name=row['class_name'],
+            course_code=row['course_code'],
+            section_number=row['section_number'],
+            current_enroll=row['current_enroll'],
+            max_enroll=row['max_enroll'],
+            department=Department(id=row['department_id'], name=row['department_name']),
+            instructor=Instructor(id=row['instructor_id'], name=row['instructor_name'])
+        )
+        enrolled_list.append(class_info)
+    
+    return {"Enrolled": enrolled_list}
+
+
+# Get all classes with active waiting lists
+@router.get("/debug/waitlist/classes", tags=['Debug'])
+def view_all_class_waitlists(db: sqlite3.Connection = Depends(get_db)):
+    cursor = db.cursor()  
+
+    # fetch all relevant waitlist information
+    cursor.execute("""
+        SELECT class.id AS class_id, class.name AS class_name, class.course_code,
+                class.section_number, class.max_enroll,
+                department.id AS department_id, department.name AS department_name,
+                users.uid AS instructor_id, users.name AS instructor_name,
+                class.current_enroll - class.max_enroll AS waitlist_total
+            FROM class
+            JOIN department ON class.department_id = department.id
+            JOIN instructor_class ON class.id = instructor_class.class_id
+            JOIN users ON instructor_class.instructor_id = users.uid
+            WHERE class.current_enroll > class.max_enroll
+        """
+    )
+    waitlist_data = cursor.fetchall()
+
+    # Check if exist
+    if not waitlist_data:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No classes have waitlists")
+
+    # Create a list to store the Waitlist_Info instances
+    waitlist_list = []
+
+    # Iterate through the query results and create Waitlist_Info instances
+    for row in waitlist_data:
+        waitlist_info = Waitlist_Info(
+            id=row['class_id'],
+            name=row['class_name'],
+            course_code=row['course_code'],
+            section_number=row['section_number'],
+            max_enroll=row['max_enroll'],
+            department=Department(id=row['department_id'], name=row['department_name']),
+            instructor=Instructor(id=row['instructor_id'], name=row['instructor_name']),
+            waitlist_total=row['waitlist_total']
+        )
+        waitlist_list.append(waitlist_info)
+
+    return {"Waitlists": waitlist_list}
+
+
+# Search for specific users based on optional parameters,
+# if no parameters are given, returns all users
+@router.get("/debug/users/search", tags=['Debug'])
+def search_for_users(uid: typing.Optional[str] = None,
+                 name: typing.Optional[str] = None,
+                 role: typing.Optional[str] = None,
+                 db: sqlite3.Connection = Depends(get_db)):
+    
+    users_info = []
+
+    sql = """SELECT * FROM users
+             LEFT JOIN user_role ON users.uid = user_role.user_id
+             LEFT JOIN role ON user_role.role_id = role.rid"""
+    
+    conditions = []
+    values = []
+    arguments = locals()
+
+    for param in SEARCH_PARAMS:
+        if arguments[param.name]:
+            if param.operator == "=":
+                conditions.append(f"{param.name} = ?")
+                values.append(arguments[param.name])
+            else:
+                conditions.append(f"{param.name} LIKE ?")
+                values.append(f"%{arguments[param.name]}%")
+    
+    if conditions:
+        sql += " WHERE "
+        sql += " AND ".join(conditions)
+
+    cursor = db.cursor()
+
+    cursor.execute(sql, values)
+    search_data = cursor.fetchall()
+
+    if not search_data:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No users found that match search parameters")
+
+    for user in search_data:
+        cursor.execute(
+            """
+            SELECT role FROM user_role 
+            JOIN role ON user_role.role_id = role.rid
+            JOIN users ON user_role.user_id = users.uid
+            WHERE user_id = ?
+            """,
+            (user["uid"],)
+        )
+        roles_data = cursor.fetchall()
+        roles = [role["role"] for role in roles_data]
+
+        user_information = User_info(
+            uid=user["uid"],
+            name=user["name"],
+            roles=roles
+        )
+
+        users_info.append(user_information)
+
+    return {"users" : users_info}
+
+
+# List all classes
+@router.get("/debug/classes", tags=['Debug'])
+def list_all_classes(db: sqlite3.Connection = Depends(get_db)):
+    cursor = db.cursor()
+    cursor.execute("""
+            SELECT class.id AS class_id, class.name AS class_name, class.course_code,
+                class.section_number, class.current_enroll, class.max_enroll,
+                department.id AS department_id, department.name AS department_name,
+                users.uid AS instructor_id, users.name AS instructor_name
+            FROM class
+            JOIN department ON class.department_id = department.id
+            JOIN instructor_class ON class.id = instructor_class.class_id
+            JOIN users ON instructor_class.instructor_id = users.uid
+        """)
+    class_data = cursor.fetchall()
+
+    if not class_data:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No classes found")
+    
+    # Create a list to store the Class_Info instances
+    class_info_list = []
+
+    # Iterate through the query results and create Class_Info instances
+    for row in class_data:
+        class_info = Class_Info(
+            id=row['class_id'],
+            name=row['class_name'],
+            course_code=row['course_code'],
+            section_number=row['section_number'],
+            current_enroll=row['current_enroll'],
+            max_enroll=row['max_enroll'],
+            department=Department(id=row['department_id'], name=row['department_name']),
+            instructor=Instructor(id=row['instructor_id'], name=row['instructor_name'])
+        )
+        class_info_list.append(class_info)
+
+    return class_info_list
