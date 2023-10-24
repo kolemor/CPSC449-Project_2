@@ -26,11 +26,11 @@
 
   `http://localhost:5200/api/`
 
-## to populate the databases with some sample data run populate.py
+## to populate the databases with some sample data run populate.py from the main directory
 
-`python populate_enrollment.py`
+`python enrollment/populate_enrollment.py`
 
-`python populate_users.py`
+`python users/populate_users.py`
 
 the user database population can take anywhere from 30 seconds to a couple minutes as there are ~600 users, and each one needs to have their password hashed, which takes some time. I'll see if I can optimize this later on, but for now it works
 
