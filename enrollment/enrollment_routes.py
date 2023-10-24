@@ -3,7 +3,8 @@ import sqlite3
 import typing
 import collections
 
-from fastapi import Depends, HTTPException, APIRouter, status
+from fastapi import Depends, HTTPException, APIRouter, status, Request
+from jose import JWTError, jwt
 from typing import List
 from enrollment.enrollment_schemas import *
 
@@ -57,7 +58,25 @@ SEARCH_PARAMS = [
 
 #gets available classes for a student
 @router.get("/students/{student_id}/classes", tags=['Student']) 
-def get_available_classes(student_id: int, db: sqlite3.Connection = Depends(get_db)):
+def get_available_classes(student_id: int, request: Request, db: sqlite3.Connection = Depends(get_db)):
+
+    current_user = int(request.headers.get("X-User"))
+    
+    roles_string = request.headers.get("X-Roles")
+    current_roles = roles_string.split(",")
+
+    r_flag = True
+    # Check if the current user's role matches 'registrar'
+    for role in current_roles:
+        if role == 'registrar':
+            r_flag = False
+            print("true")
+    
+    # Check if the current user's id matches the requested student_id
+    if r_flag:
+        if current_user != student_id:
+            raise HTTPException(status_code=403, detail="Access forbidden, wrong student_id")
+    
     cursor = db.cursor()
     # Fetch student data from db
     cursor.execute(
@@ -70,6 +89,7 @@ def get_available_classes(student_id: int, db: sqlite3.Connection = Depends(get_
         """, (student_id, 'student')
     )
     student_data = cursor.fetchone()
+
     #Check if exist
     if not student_data:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Student not found")
@@ -126,10 +146,27 @@ def get_available_classes(student_id: int, db: sqlite3.Connection = Depends(get_
 # Enrolls a student into an available class,
 # or will automatically put the student on an open waitlist for a full class
 @router.post("/students/{student_id}/classes/{class_id}/enroll", tags=['Student'])
-def enroll_student_in_class(student_id: int, class_id: int, db: sqlite3.Connection = Depends(get_db)):
-    cursor = db.cursor()
+def enroll_student_in_class(student_id: int, class_id: int, request: Request, db: sqlite3.Connection = Depends(get_db)):
+   
+    current_user = int(request.headers.get("X-User"))
+    
+    roles_string = request.headers.get("X-Roles")
+    current_roles = roles_string.split(",")
+
+    r_flag = True
+    # Check if the current user's role matches 'registrar'
+    for role in current_roles:
+        if role == 'registrar':
+            r_flag = False
+            print("true")
+    
+    # Check if the current user's id matches the requested student_id
+    if r_flag:
+        if current_user != student_id:
+            raise HTTPException(status_code=403, detail="Access forbidden, wrong student_id")
 
     cursor = db.cursor()
+
     # Check if the student exists in the database
     cursor.execute(
         """
@@ -198,7 +235,25 @@ def enroll_student_in_class(student_id: int, class_id: int, db: sqlite3.Connecti
 
 # Have a student drop a class they're enrolled in
 @router.put("/students/{student_id}/classes/{class_id}/drop/", tags=['Student'])
-def drop_student_from_class(student_id: int, class_id: int, db: sqlite3.Connection = Depends(get_db)):
+def drop_student_from_class(student_id: int, class_id: int, request: Request, db: sqlite3.Connection = Depends(get_db)):
+    
+    current_user = int(request.headers.get("X-User"))
+    
+    roles_string = request.headers.get("X-Roles")
+    current_roles = roles_string.split(",")
+
+    r_flag = True
+    # Check if the current user's role matches 'registrar'
+    for role in current_roles:
+        if role == 'registrar':
+            r_flag = False
+            print("true")
+    
+    # Check if the current user's id matches the requested student_id
+    if r_flag:
+        if current_user != student_id:
+            raise HTTPException(status_code=403, detail="Access forbidden, wrong student_id")
+    
     cursor = db.cursor()
 
     # check if exist
@@ -248,7 +303,25 @@ def drop_student_from_class(student_id: int, class_id: int, db: sqlite3.Connecti
 
 # Get all waiting lists for a student
 @router.get("/waitlist/students/{student_id}", tags=['Waitlist'])
-def view_waiting_list(student_id: int, db: sqlite3.Connection = Depends(get_db)):
+def view_waiting_list(student_id: int, request: Request, db: sqlite3.Connection = Depends(get_db)):
+    
+    current_user = int(request.headers.get("X-User"))
+    
+    roles_string = request.headers.get("X-Roles")
+    current_roles = roles_string.split(",")
+
+    r_flag = True
+    # Check if the current user's role matches 'registrar'
+    for role in current_roles:
+        if role == 'registrar':
+            r_flag = False
+            print("true")
+    
+    # Check if the current user's id matches the requested student_id
+    if r_flag:
+        if current_user != student_id:
+            raise HTTPException(status_code=403, detail="Access forbidden, wrong student_id")
+    
     cursor = db.cursor()
 
     # Retrieve waitlist entries for the specified student from the database
@@ -297,7 +370,25 @@ def view_waiting_list(student_id: int, db: sqlite3.Connection = Depends(get_db))
 
 # remove a student from a waiting list
 @router.put("/waitlist/students/{student_id}/classes/{class_id}/drop", tags=['Waitlist'])
-def remove_from_waitlist(student_id: int, class_id: int, db: sqlite3.Connection = Depends(get_db)):
+def remove_from_waitlist(student_id: int, class_id: int, request: Request, db: sqlite3.Connection = Depends(get_db)):
+    
+    current_user = int(request.headers.get("X-User"))
+    
+    roles_string = request.headers.get("X-Roles")
+    current_roles = roles_string.split(",")
+
+    r_flag = True
+    # Check if the current user's role matches 'registrar'
+    for role in current_roles:
+        if role == 'registrar':
+            r_flag = False
+            print("true")
+    
+    # Check if the current user's id matches the requested student_id
+    if r_flag:
+        if current_user != student_id:
+            raise HTTPException(status_code=403, detail="Access forbidden, wrong student_id")
+    
     cursor = db.cursor()
     
     # check if exist
@@ -344,7 +435,25 @@ def remove_from_waitlist(student_id: int, class_id: int, db: sqlite3.Connection 
 # Get a list of students on a waitlist for a particular class that
 # a specific instructor teaches
 @router.get("/waitlist/instructors/{instructor_id}/classes/{class_id}",tags=['Waitlist'])
-def view_current_waitlist(instructor_id: int, class_id: int, db: sqlite3.Connection = Depends(get_db)):
+def view_current_waitlist(instructor_id: int, class_id: int, request: Request, db: sqlite3.Connection = Depends(get_db)):
+    
+    current_user = int(request.headers.get("X-User"))
+    
+    roles_string = request.headers.get("X-Roles")
+    current_roles = roles_string.split(",")
+
+    r_flag = True
+    # Check if the current user's role matches 'registrar'
+    for role in current_roles:
+        if role == 'registrar':
+            r_flag = False
+            print("true")
+    
+    # Check if the current user's id matches the requested instructor_id
+    if r_flag:
+        if current_user != instructor_id:
+            raise HTTPException(status_code=403, detail="Access forbidden, wrong student_id")
+    
     cursor = db.cursor()
 
    # check if exist
@@ -414,7 +523,25 @@ def view_current_waitlist(instructor_id: int, class_id: int, db: sqlite3.Connect
 
 #view current enrollment for class
 @router.get("/instructors/{instructor_id}/classes/{class_id}/enrollment", tags=['Instructor'])
-def get_instructor_enrollment(instructor_id: int, class_id: int, db: sqlite3.Connection = Depends(get_db)):
+def get_instructor_enrollment(instructor_id: int, class_id: int, request: Request, db: sqlite3.Connection = Depends(get_db)):
+    
+    current_user = int(request.headers.get("X-User"))
+    
+    roles_string = request.headers.get("X-Roles")
+    current_roles = roles_string.split(",")
+
+    r_flag = True
+    # Check if the current user's role matches 'registrar'
+    for role in current_roles:
+        if role == 'registrar':
+            r_flag = False
+            print("true")
+    
+    # Check if the current user's id matches the requested instructor_id
+    if r_flag:
+        if current_user != instructor_id:
+            raise HTTPException(status_code=403, detail="Access forbidden, wrong student_id")
+    
     cursor = db.cursor()
 
     #check if exist
@@ -478,7 +605,25 @@ def get_instructor_enrollment(instructor_id: int, class_id: int, db: sqlite3.Con
 
 #view students who have dropped the class
 @router.get("/instructors/{instructor_id}/classes/{class_id}/drop", tags=['Instructor'])
-def get_instructor_dropped(instructor_id: int, class_id: int, db: sqlite3.Connection = Depends(get_db)):
+def get_instructor_dropped(instructor_id: int, class_id: int, request: Request, db: sqlite3.Connection = Depends(get_db)):
+    
+    current_user = int(request.headers.get("X-User"))
+    
+    roles_string = request.headers.get("X-Roles")
+    current_roles = roles_string.split(",")
+
+    r_flag = True
+    # Check if the current user's role matches 'registrar'
+    for role in current_roles:
+        if role == 'registrar':
+            r_flag = False
+            print("true")
+    
+    # Check if the current user's id matches the requested instructor_id
+    if r_flag:
+        if current_user != instructor_id:
+            raise HTTPException(status_code=403, detail="Access forbidden, wrong student_id")
+    
     cursor = db.cursor()
 
     #Check if exist
@@ -535,7 +680,25 @@ def get_instructor_dropped(instructor_id: int, class_id: int, db: sqlite3.Connec
 
 #Instructor administratively drop students
 @router.post("/instructors/{instructor_id}/classes/{class_id}/students/{student_id}/drop", tags=['Instructor'])
-def instructor_drop_class(instructor_id: int, class_id: int, student_id: int, db: sqlite3.Connection = Depends(get_db)):
+def instructor_drop_class(instructor_id: int, class_id: int, student_id: int, request: Request, db: sqlite3.Connection = Depends(get_db)):
+    
+    current_user = int(request.headers.get("X-User"))
+    
+    roles_string = request.headers.get("X-Roles")
+    current_roles = roles_string.split(",")
+
+    r_flag = True
+    # Check if the current user's role matches 'registrar'
+    for role in current_roles:
+        if role == 'registrar':
+            r_flag = False
+            print("true")
+    
+    # Check if the current user's id matches the requested instructor_id
+    if r_flag:
+        if current_user != instructor_id:
+            raise HTTPException(status_code=403, detail="Access forbidden, wrong student_id")
+    
     cursor = db.cursor()
 
     #Check if exist
@@ -598,6 +761,7 @@ def instructor_drop_class(instructor_id: int, class_id: int, student_id: int, db
 # Create a new class
 @router.post("/registrar/classes/", tags=['Registrar'])
 def create_class(class_data: Class_Registrar, db: sqlite3.Connection = Depends(get_db)):
+    
     try:
         cursor = db.cursor()
 
@@ -654,6 +818,7 @@ def create_class(class_data: Class_Registrar, db: sqlite3.Connection = Depends(g
 # Remove a class
 @router.delete("/registrar/classes/{class_id}", tags=['Registrar'])
 def remove_class(class_id: int, db: sqlite3.Connection = Depends(get_db)):
+
     cursor = db.cursor()
 
     # Check if the class exists in the database
@@ -885,7 +1050,10 @@ def search_for_users(uid: typing.Optional[str] = None,
 
 # List all classes
 @router.get("/debug/classes", tags=['Debug'])
-def list_all_classes(db: sqlite3.Connection = Depends(get_db)):
+def list_all_classes(request: Request, db: sqlite3.Connection = Depends(get_db)):
+    
+    print(request.headers)
+    
     cursor = db.cursor()
     cursor.execute("""
             SELECT class.id AS class_id, class.name AS class_name, class.course_code,
@@ -919,4 +1087,4 @@ def list_all_classes(db: sqlite3.Connection = Depends(get_db)):
         )
         class_info_list.append(class_info)
 
-    return class_info_list
+    return {"Classes" : class_info_list}
