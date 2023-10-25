@@ -10,13 +10,17 @@
 
 ## then in the working directory run this command to run the uvicorn server
 
-`foreman start`
+`foreman start -m enrollment=3,users=1,krakend=1`
 
 ## finally go to the following link to test the api
 
 - Enrollment service
 
   `http://localhost:5000/docs`
+
+  `http://localhost:5001/docs`
+
+  `http://localhost:5002/docs`
 
 - user service
 
