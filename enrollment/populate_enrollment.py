@@ -291,7 +291,7 @@ def populate_database():
                     student_id integer,
                     class_id integer,
                     PRIMARY KEY (student_id, class_id),
-                    FOREIGN KEY(student_id) REFERENCES users (id),
+                    FOREIGN KEY(student_id) REFERENCES users (uid),
                     FOREIGN KEY(class_id) REFERENCES class (id)
                     )"""
     create_table(conn, dropped_table)
@@ -300,7 +300,7 @@ def populate_database():
                     student_id integer,
                     waitlist_count integer,
                     PRIMARY KEY (student_id),
-                    FOREIGN KEY(student_id) REFERENCES users (id)
+                    FOREIGN KEY(student_id) REFERENCES users (uid)
                     )"""
     create_table(conn, waitlist_table)
 
