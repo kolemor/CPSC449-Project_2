@@ -4,7 +4,6 @@ import typing
 import collections
 
 from fastapi import Depends, HTTPException, APIRouter, status, Request
-from jose import JWTError, jwt
 from typing import List
 from enrollment.enrollment_schemas import *
 
