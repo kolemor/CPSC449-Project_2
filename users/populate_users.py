@@ -3,7 +3,7 @@ import os
 
 from users_hash import hash_password
 
-database = "users/users.db"
+database = "var/primary/fuse/users.db"
 
 #Remove database if it exists before creating and populating it
 if os.path.exists(database):
@@ -42,6 +42,7 @@ for male in mname:
 
 if os.path.exists(database):
     os.remove(database)
+
 """ create a database connection to the SQLite database
         specified by db_file
     :param db_file: database file

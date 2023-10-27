@@ -2,6 +2,7 @@ import contextlib
 import sqlite3
 import typing
 import collections
+import os
 
 from fastapi import Depends, HTTPException, APIRouter, status, Query
 from users.users_schemas import *
@@ -10,7 +11,9 @@ from users.mkclaims import generate_claims
 
 router = APIRouter()
 
-database = "users/users.db"
+primary_database = "var/primary/fuse/users.db"
+secondary_database = "var/secondary/fuse/users.db"
+tertiary_database = "var/tertiary/fuse/users.db"
 
 # Used for the search endpoint
 SearchParam = collections.namedtuple("SearchParam", ["name", "operator"])
@@ -29,17 +32,64 @@ SEARCH_PARAMS = [
     ),
 ]
 
-# Connect to the database
-def get_db():
-    with contextlib.closing(sqlite3.connect(database, check_same_thread=False)) as db:
-        db.row_factory = sqlite3.Row
-        yield db
+# Flag to track the last database used for read operations
+last_read_db = None  # Start with None to use secondary database first
+
+# Connect to the appropriate database based on the endpoint
+def get_db_read():
+    
+    # Database availability check
+    available_databases = []
+
+    if os.path.exists(primary_database):
+        available_databases.append(primary_database)
+
+    if os.path.exists(secondary_database):
+        available_databases.append(secondary_database)
+
+    if os.path.exists(tertiary_database):
+        available_databases.append(tertiary_database)
+
+    if not available_databases:
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="All databases are unavailable")
+    
+    else:
+        global last_read_db
+
+        if available_databases[1] and available_databases[2]:
+            if last_read_db == secondary_database:
+                last_read_db = tertiary_database
+            else:
+                last_read_db = secondary_database
+        elif available_databases[1] and not available_databases[2]:
+            last_read_db = secondary_database
+        elif not available_databases[1] and available_databases[2]:
+            last_read_db = tertiary_database
+        else:
+            last_read_db = primary_database
+
+        with contextlib.closing(sqlite3.connect(last_read_db, check_same_thread=False)) as db:
+            db.row_factory = sqlite3.Row
+            yield db
+    
+def get_db_write():
+    
+    # Database availability check
+    available_databases = []
+
+    if os.path.exists(primary_database):
+        with contextlib.closing(sqlite3.connect(primary_database, check_same_thread=False)) as db:
+            db.row_factory = sqlite3.Row
+            yield db
+    else:
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Database unavailable")
+
 
 #==========================================Users==================================================
 
 # The login enpoint, where JWT validation needs to occur
 @router.post("/users/login", tags=['Users'])
-def get_user_login(user: User, db: sqlite3.Connection = Depends(get_db)):
+def get_user_login(user: User, db: sqlite3.Connection = Depends(get_db_read)):
     cursor = db.cursor()
     cursor.execute(
         """
@@ -78,7 +128,7 @@ def get_user_login(user: User, db: sqlite3.Connection = Depends(get_db)):
 
 # Create new user endpoint
 @router.post("/users/register", tags=['Users'])
-def register_new_user(user: User, db: sqlite3.Connection = Depends(get_db)):
+def register_new_user(user: User, db: sqlite3.Connection = Depends(get_db_write)):
     cursor = db.cursor()
     cursor.execute(
         """
@@ -126,7 +176,7 @@ def register_new_user(user: User, db: sqlite3.Connection = Depends(get_db)):
 @router.get("/users/check_password", tags=['Users'])
 def get_user_password(username: str = Query(..., title="Username", description="Your username"),
     password: str = Query(..., title="Password", description="Your password"),
-    db: sqlite3.Connection = Depends(get_db)):
+    db: sqlite3.Connection = Depends(get_db_read)):
 
     # Query the database to retrieve the user's password hash
     cursor = db.cursor()
@@ -162,7 +212,7 @@ def get_user_password(username: str = Query(..., title="Username", description="
 def search_for_users(uid: typing.Optional[str] = None,
                  name: typing.Optional[str] = None,
                  role: typing.Optional[str] = None,
-                 db: sqlite3.Connection = Depends(get_db)):
+                 db: sqlite3.Connection = Depends(get_db_read)):
     
     users_info = []
 
@@ -190,31 +240,3 @@ def search_for_users(uid: typing.Optional[str] = None,
     cursor = db.cursor()
 
     cursor.execute(sql, values)
-    search_data = cursor.fetchall()
-
-    if not search_data:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No users found that match search parameters")
-
-    for user in search_data:
-        cursor.execute(
-            """
-            SELECT role FROM user_role 
-            JOIN role ON user_role.role_id = role.rid
-            JOIN users ON user_role.user_id = users.uid
-            WHERE user_id = ?
-            """,
-            (user["uid"],)
-        )
-        roles_data = cursor.fetchall()
-        roles = [role["role"] for role in roles_data]
-
-        user_information = User_info(
-            uid=user["uid"],
-            name=user["name"],
-            password=user["password"],
-            roles=roles
-        )
-
-        users_info.append(user_information)
-
-    return {"users" : users_info}

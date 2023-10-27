@@ -32,7 +32,6 @@ htmlcov/
 .coverage
 .coverage.*
 log.txt
-user_keys.json
 
 # Ignore project-specific configuration files
 settings.ini
@@ -45,3 +44,10 @@ venv/
 env/
 myenv/
 
+# Ignore litefs stuff
+var/primary/data/
+var/primary/fuse/
+var/secondary/data/
+var/secondary/fuse/
+var/tertiary/data/
+var/tertiary/fuse/

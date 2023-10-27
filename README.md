@@ -8,9 +8,9 @@
 
 `pip install -r requirements.txt`
 
-## then in the working directory run this command to run the uvicorn server
+## then in the main directory run this command to run the uvicorn server
 
-`foreman start -m enrollment=3,users=1,krakend=1`
+`foreman start -m enrollment=3,primary=1,secondary=1,tertiary=1,krakend=1`
 
 ## finally go to the following link to test the api
 
@@ -28,7 +28,7 @@
 
 - KrakenD (enrollment service)
 
-  `http://localhost:5200/api/`
+  `http://localhost:5400/api/`
 
 ## to populate the databases with some sample data run populate.py from the main directory
 
