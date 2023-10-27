@@ -73,9 +73,6 @@ def get_db_read():
             yield db
     
 def get_db_write():
-    
-    # Database availability check
-    available_databases = []
 
     if os.path.exists(primary_database):
         with contextlib.closing(sqlite3.connect(primary_database, check_same_thread=False)) as db:
