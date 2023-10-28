@@ -3,6 +3,7 @@ import sqlite3
 import typing
 import collections
 import os
+import httpx
 
 from fastapi import Depends, HTTPException, APIRouter, status, Query
 from users.users_schemas import *
@@ -122,10 +123,9 @@ def get_user_login(user: User, db: sqlite3.Connection = Depends(get_db_read)):
     return token_data
 
 
-
 # Create new user endpoint
 @router.post("/users/register", tags=['Users'])
-def register_new_user(user: User, db: sqlite3.Connection = Depends(get_db_write)):
+async def register_new_user(user: User, db: sqlite3.Connection = Depends(get_db_write)):
     cursor = db.cursor()
     cursor.execute(
         """
@@ -166,7 +166,24 @@ def register_new_user(user: User, db: sqlite3.Connection = Depends(get_db_write)
 
     db.commit()
 
-    return {"message": "User created successfully"}
+    #call enrollment endpoint /registrar/create_user
+    enrollment_URL = "http://localhost:5000/registrar/create_user"
+    
+    # Make an HTTP request to the enrollment service using the app instance
+    user_data_to_send = {
+        "name": user.name,
+        "roles": ["student"],
+    }
+
+    # Make an HTTP request to the enrollment service
+    async with httpx.AsyncClient() as client:
+        response = await client.post(f"{enrollment_URL}", json=user_data_to_send)
+
+    if response.status_code == 200:
+        return {"message": "User created successfully"}
+    else:
+        raise HTTPException(status_code=response.status_code, detail="Failed to create user in enrollment service")
+
 
 
 # Have a user check their password
@@ -237,3 +254,31 @@ def search_for_users(uid: typing.Optional[str] = None,
     cursor = db.cursor()
 
     cursor.execute(sql, values)
+    search_data = cursor.fetchall()
+
+    if not search_data:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No users found that match search parameters")
+
+    for user in search_data:
+        cursor.execute(
+            """
+            SELECT role FROM user_role 
+            JOIN role ON user_role.role_id = role.rid
+            JOIN users ON user_role.user_id = users.uid
+            WHERE user_id = ?
+            """,
+            (user["uid"],)
+        )
+        roles_data = cursor.fetchall()
+        roles = [role["role"] for role in roles_data]
+
+        user_information = User_info(
+            uid=user["uid"],
+            name=user["name"],
+            password=user["password"],
+            roles=roles
+        )
+
+        users_info.append(user_information)
+
+    return {"users" : users_info}

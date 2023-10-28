@@ -27,7 +27,11 @@
       "backend": [
         {
           "url_pattern": "/students/{student_id}/classes",
-          "host": ["http://localhost:5000","http://localhost:5001","http://localhost:5002"],
+          "host": [
+            "http://localhost:5000",
+            "http://localhost:5001",
+            "http://localhost:5002"
+          ],
           "extra_config": {
             "backend/http": {
               "return_error_details": "backend_alias"
@@ -58,7 +62,11 @@
       "backend": [
         {
           "url_pattern": "/students/{student_id}/classes/{class_id}/enroll/",
-          "host": ["http://localhost:5000","http://localhost:5001","http://localhost:5002"],
+          "host": [
+            "http://localhost:5000",
+            "http://localhost:5001",
+            "http://localhost:5002"
+          ],
           "extra_config": {
             "backend/http": {
               "return_error_details": "backend_alias"
@@ -89,7 +97,11 @@
       "backend": [
         {
           "url_pattern": "/students/{student_id}/classes/{class_id}/drop/",
-          "host": ["http://localhost:5000","http://localhost:5001","http://localhost:5002"],
+          "host": [
+            "http://localhost:5000",
+            "http://localhost:5001",
+            "http://localhost:5002"
+          ],
           "extra_config": {
             "backend/http": {
               "return_error_details": "backend_alias"
@@ -120,7 +132,11 @@
       "backend": [
         {
           "url_pattern": "/waitlist/students/{student_id}",
-          "host": ["http://localhost:5000","http://localhost:5001","http://localhost:5002"],
+          "host": [
+            "http://localhost:5000",
+            "http://localhost:5001",
+            "http://localhost:5002"
+          ],
           "extra_config": {
             "backend/http": {
               "return_error_details": "backend_alias"
@@ -151,7 +167,11 @@
       "backend": [
         {
           "url_pattern": "/waitlist/students/{student_id}/classes/{class_id}/drop/",
-          "host": ["http://localhost:5000","http://localhost:5001","http://localhost:5002"],
+          "host": [
+            "http://localhost:5000",
+            "http://localhost:5001",
+            "http://localhost:5002"
+          ],
           "extra_config": {
             "backend/http": {
               "return_error_details": "backend_alias"
@@ -182,7 +202,11 @@
       "backend": [
         {
           "url_pattern": "/waitlist/instructors/{instructor_id}/classes/{class_id}",
-          "host": ["http://localhost:5000","http://localhost:5001","http://localhost:5002"],
+          "host": [
+            "http://localhost:5000",
+            "http://localhost:5001",
+            "http://localhost:5002"
+          ],
           "extra_config": {
             "backend/http": {
               "return_error_details": "backend_alias"
@@ -213,7 +237,11 @@
       "backend": [
         {
           "url_pattern": "/instructors/{instructor_id}/classes/{class_id}/enrollment",
-          "host": ["http://localhost:5000","http://localhost:5001","http://localhost:5002"],
+          "host": [
+            "http://localhost:5000",
+            "http://localhost:5001",
+            "http://localhost:5002"
+          ],
           "extra_config": {
             "backend/http": {
               "return_error_details": "backend_alias"
@@ -244,7 +272,11 @@
       "backend": [
         {
           "url_pattern": "/instructors/{instructor_id}/classes/{class_id}/drop",
-          "host": ["http://localhost:5000","http://localhost:5001","http://localhost:5002"],
+          "host": [
+            "http://localhost:5000",
+            "http://localhost:5001",
+            "http://localhost:5002"
+          ],
           "extra_config": {
             "backend/http": {
               "return_error_details": "backend_alias"
@@ -275,7 +307,11 @@
       "backend": [
         {
           "url_pattern": "/instructors/{instructor_id}/classes/{class_id}/students/{student_id}/drop/",
-          "host": ["http://localhost:5000","http://localhost:5001","http://localhost:5002"],
+          "host": [
+            "http://localhost:5000",
+            "http://localhost:5001",
+            "http://localhost:5002"
+          ],
           "extra_config": {
             "backend/http": {
               "return_error_details": "backend_alias"
@@ -306,7 +342,11 @@
       "backend": [
         {
           "url_pattern": "/registrar/classes/",
-          "host": ["http://localhost:5000","http://localhost:5001","http://localhost:5002"],
+          "host": [
+            "http://localhost:5000",
+            "http://localhost:5001",
+            "http://localhost:5002"
+          ],
           "extra_config": {
             "backend/http": {
               "return_error_details": "backend_alias"
@@ -337,7 +377,11 @@
       "backend": [
         {
           "url_pattern": "/registrar/classes/{class_id}",
-          "host": ["http://localhost:5000","http://localhost:5001","http://localhost:5002"],
+          "host": [
+            "http://localhost:5000",
+            "http://localhost:5001",
+            "http://localhost:5002"
+          ],
           "extra_config": {
             "backend/http": {
               "return_error_details": "backend_alias"
@@ -368,7 +412,11 @@
       "backend": [
         {
           "url_pattern": "/registrar/classes/{class_id}/instructors/{instructor_id}",
-          "host": ["http://localhost:5000","http://localhost:5001","http://localhost:5002"],
+          "host": [
+            "http://localhost:5000",
+            "http://localhost:5001",
+            "http://localhost:5002"
+          ],
           "extra_config": {
             "backend/http": {
               "return_error_details": "backend_alias"
@@ -399,7 +447,47 @@
       "backend": [
         {
           "url_pattern": "/registrar/automatic-enrollment/freeze",
-          "host": ["http://localhost:5000","http://localhost:5001","http://localhost:5002"],
+          "host": [
+            "http://localhost:5000",
+            "http://localhost:5001",
+            "http://localhost:5002"
+          ],
+          "extra_config": {
+            "backend/http": {
+              "return_error_details": "backend_alias"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "endpoint": "/api/registrar/create_user",
+      "method": "POST",
+      "input_headers": ["X-User", "X-Roles"],
+      "input_query_strings": ["uid", "name", "role"],
+      "extra_config": {
+        "auth/validator": {
+          "alg": "RS256",
+          "roles_key": "roles",
+          "roles": ["registrar"],
+          "jwk_local_path": "public.json",
+          "disable_jwk_security": true,
+          "cache": false,
+          "propagate_claims": [
+            ["jti", "x-user"],
+            ["roles", "x-roles"]
+          ],
+          "operation_debug": true
+        }
+      },
+      "backend": [
+        {
+          "url_pattern": "/registrar/create_user",
+          "host": [
+            "http://localhost:5000",
+            "http://localhost:5001",
+            "http://localhost:5002"
+          ],
           "extra_config": {
             "backend/http": {
               "return_error_details": "backend_alias"
@@ -430,7 +518,11 @@
       "backend": [
         {
           "url_pattern": "/debug/students/{student_id}/enrolled",
-          "host": ["http://localhost:5000","http://localhost:5001","http://localhost:5002"],
+          "host": [
+            "http://localhost:5000",
+            "http://localhost:5001",
+            "http://localhost:5002"
+          ],
           "extra_config": {
             "backend/http": {
               "return_error_details": "backend_alias"
@@ -461,7 +553,11 @@
       "backend": [
         {
           "url_pattern": "/debug/waitlist/classes",
-          "host": ["http://localhost:5000","http://localhost:5001","http://localhost:5002"],
+          "host": [
+            "http://localhost:5000",
+            "http://localhost:5001",
+            "http://localhost:5002"
+          ],
           "extra_config": {
             "backend/http": {
               "return_error_details": "backend_alias"
@@ -493,7 +589,11 @@
       "backend": [
         {
           "url_pattern": "/debug/users/search",
-          "host": ["http://localhost:5000","http://localhost:5001","http://localhost:5002"],
+          "host": [
+            "http://localhost:5000",
+            "http://localhost:5001",
+            "http://localhost:5002"
+          ],
           "extra_config": {
             "backend/http": {
               "return_error_details": "backend_alias"
@@ -524,7 +624,11 @@
       "backend": [
         {
           "url_pattern": "/debug/classes",
-          "host": ["http://localhost:5000","http://localhost:5001","http://localhost:5002"],
+          "host": [
+            "http://localhost:5000",
+            "http://localhost:5001",
+            "http://localhost:5002"
+          ],
           "extra_config": {
             "backend/http": {
               "return_error_details": "backend_alias"

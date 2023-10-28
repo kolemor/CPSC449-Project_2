@@ -876,6 +876,38 @@ def freeze_automatic_enrollment():
         return {"message": "Automatic enrollment frozen successfully"}
 
 
+# Create a new user (used by the user service to duplicate user info)
+@router.post("/registrar/create_user", tags=['Registrar'])
+def create_user(user: Create_User, db: sqlite3.Connection = Depends(get_db)):
+    
+    print("username: ",user.name)
+    print("roles: ", user.roles)
+    cursor = db.cursor()
+
+    cursor.execute("INSERT INTO users (name) VALUES (?)", (user.name,))
+    
+    for role in user.roles:
+        cursor.execute("SELECT rid FROM role WHERE role = ?", (role,))
+        rid = cursor.fetchone()
+        
+        cursor.execute(
+        """
+        SELECT * FROM users WHERE name = ?
+        """, (user.name,)
+        )
+        user_data = cursor.fetchone()
+        print(user_data['uid'])
+        cursor.execute(
+            """
+            INSERT INTO user_role (user_id, role_id)
+            VALUES (?, ?)
+            """, (user_data['uid'], rid['rid'])
+        )
+
+    db.commit()
+
+    return {"Message": "user created successfully"}
+
 #==========================================Test Endpoints==================================================
 
 # None of the following endpoints are required (I assume), but might be helpful
