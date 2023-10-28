@@ -4,11 +4,12 @@ import typing
 import collections
 import os
 import httpx
+import datetime
 
 from fastapi import Depends, HTTPException, APIRouter, status, Query
 from users.users_schemas import *
 from users.users_hash import hash_password, verify_password
-from users.mkclaims import generate_claims
+
 
 router = APIRouter()
 
@@ -32,6 +33,32 @@ SEARCH_PARAMS = [
         "LIKE",
     ),
 ]
+
+# The next two functions handles JWT claim
+def expiration_in(minutes):
+    creation = datetime.datetime.now(tz=datetime.timezone.utc)
+    expiration = creation + datetime.timedelta(minutes=minutes)
+    return creation, expiration
+
+
+def generate_claims(username, user_id, roles):
+    _, exp = expiration_in(20)
+
+    claims = {
+        "aud": "krakend.local.gd",
+        "iss": "auth.local.gd",
+        "sub": username,
+        "jti": str(user_id),
+        "roles": roles,
+        "exp": int(exp.timestamp()),
+    }
+    token = {
+        "access_token": claims,
+        "refresh_token": claims,
+        "exp": int(exp.timestamp()),
+    }
+
+    return token
 
 # Flag to track the last database used for read operations
 last_read_db = None  # Start with None to use secondary database first
@@ -183,7 +210,6 @@ async def register_new_user(user: User, db: sqlite3.Connection = Depends(get_db_
         return {"message": "User created successfully"}
     else:
         raise HTTPException(status_code=response.status_code, detail="Failed to create user in enrollment service")
-
 
 
 # Have a user check their password

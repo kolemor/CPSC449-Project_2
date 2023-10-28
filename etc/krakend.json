@@ -14,7 +14,7 @@
           "alg": "RS256",
           "roles_key": "roles",
           "roles": ["student", "registrar"],
-          "jwk_local_path": "public.json",
+          "jwk_local_path": "jwk/public.json",
           "disable_jwk_security": true,
           "cache": false,
           "propagate_claims": [
@@ -49,7 +49,7 @@
           "alg": "RS256",
           "roles_key": "roles",
           "roles": ["student", "registrar"],
-          "jwk_local_path": "public.json",
+          "jwk_local_path": "jwk/public.json",
           "disable_jwk_security": true,
           "cache": false,
           "propagate_claims": [
@@ -84,7 +84,7 @@
           "alg": "RS256",
           "roles_key": "roles",
           "roles": ["student", "registrar"],
-          "jwk_local_path": "public.json",
+          "jwk_local_path": "jwk/public.json",
           "disable_jwk_security": true,
           "cache": false,
           "propagate_claims": [
@@ -119,7 +119,7 @@
           "alg": "RS256",
           "roles_key": "roles",
           "roles": ["student", "registrar"],
-          "jwk_local_path": "public.json",
+          "jwk_local_path": "jwk/public.json",
           "disable_jwk_security": true,
           "cache": false,
           "propagate_claims": [
@@ -154,7 +154,7 @@
           "alg": "RS256",
           "roles_key": "roles",
           "roles": ["student", "registrar"],
-          "jwk_local_path": "public.json",
+          "jwk_local_path": "jwk/public.json",
           "disable_jwk_security": true,
           "cache": false,
           "propagate_claims": [
@@ -189,7 +189,7 @@
           "alg": "RS256",
           "roles_key": "roles",
           "roles": ["instructor", "registrar"],
-          "jwk_local_path": "public.json",
+          "jwk_local_path": "jwk/public.json",
           "disable_jwk_security": true,
           "cache": false,
           "propagate_claims": [
@@ -224,7 +224,7 @@
           "alg": "RS256",
           "roles_key": "roles",
           "roles": ["instructor", "registrar"],
-          "jwk_local_path": "public.json",
+          "jwk_local_path": "jwk/public.json",
           "disable_jwk_security": true,
           "cache": false,
           "propagate_claims": [
@@ -259,7 +259,7 @@
           "alg": "RS256",
           "roles_key": "roles",
           "roles": ["instructor", "registrar"],
-          "jwk_local_path": "public.json",
+          "jwk_local_path": "jwk/public.json",
           "disable_jwk_security": true,
           "cache": false,
           "propagate_claims": [
@@ -294,7 +294,7 @@
           "alg": "RS256",
           "roles_key": "roles",
           "roles": ["instructor", "registrar"],
-          "jwk_local_path": "public.json",
+          "jwk_local_path": "jwk/public.json",
           "disable_jwk_security": true,
           "cache": false,
           "propagate_claims": [
@@ -329,7 +329,7 @@
           "alg": "RS256",
           "roles_key": "roles",
           "roles": ["registrar"],
-          "jwk_local_path": "public.json",
+          "jwk_local_path": "jwk/public.json",
           "disable_jwk_security": true,
           "cache": false,
           "propagate_claims": [
@@ -364,7 +364,7 @@
           "alg": "RS256",
           "roles_key": "roles",
           "roles": ["registrar"],
-          "jwk_local_path": "public.json",
+          "jwk_local_path": "jwk/public.json",
           "disable_jwk_security": true,
           "cache": false,
           "propagate_claims": [
@@ -399,7 +399,7 @@
           "alg": "RS256",
           "roles_key": "roles",
           "roles": ["registrar"],
-          "jwk_local_path": "public.json",
+          "jwk_local_path": "jwk/public.json",
           "disable_jwk_security": true,
           "cache": false,
           "propagate_claims": [
@@ -434,7 +434,7 @@
           "alg": "RS256",
           "roles_key": "roles",
           "roles": ["registrar"],
-          "jwk_local_path": "public.json",
+          "jwk_local_path": "jwk/public.json",
           "disable_jwk_security": true,
           "cache": false,
           "propagate_claims": [
@@ -470,7 +470,7 @@
           "alg": "RS256",
           "roles_key": "roles",
           "roles": ["registrar"],
-          "jwk_local_path": "public.json",
+          "jwk_local_path": "jwk/public.json",
           "disable_jwk_security": true,
           "cache": false,
           "propagate_claims": [
@@ -505,7 +505,7 @@
           "alg": "RS256",
           "roles_key": "roles",
           "roles": ["registrar"],
-          "jwk_local_path": "public.json",
+          "jwk_local_path": "jwk/public.json",
           "disable_jwk_security": true,
           "cache": false,
           "propagate_claims": [
@@ -540,7 +540,7 @@
           "alg": "RS256",
           "roles_key": "roles",
           "roles": ["registrar"],
-          "jwk_local_path": "public.json",
+          "jwk_local_path": "jwk/public.json",
           "disable_jwk_security": true,
           "cache": false,
           "propagate_claims": [
@@ -576,7 +576,7 @@
           "alg": "RS256",
           "roles_key": "roles",
           "roles": ["registrar"],
-          "jwk_local_path": "public.json",
+          "jwk_local_path": "jwk/public.json",
           "disable_jwk_security": true,
           "cache": false,
           "propagate_claims": [
@@ -611,7 +611,7 @@
           "alg": "RS256",
           "roles_key": "roles",
           "roles": ["registrar"],
-          "jwk_local_path": "public.json",
+          "jwk_local_path": "jwk/public.json",
           "disable_jwk_security": true,
           "cache": false,
           "propagate_claims": [
@@ -656,7 +656,7 @@
           "alg": "RS256",
           "kid": "test",
           "keys_to_sign": ["access_token", "refresh_token"],
-          "jwk_local_path": "private.json",
+          "jwk_local_path": "jwk/private.json",
           "disable_jwk_security": true
         }
       }

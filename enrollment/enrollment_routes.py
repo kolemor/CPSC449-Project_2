@@ -74,7 +74,7 @@ def get_available_classes(student_id: int, request: Request, db: sqlite3.Connect
     # Check if the current user's id matches the requested student_id
     if r_flag:
         if current_user != student_id:
-            raise HTTPException(status_code=403, detail="Access forbidden, wrong student_id")
+            raise HTTPException(status_code=403, detail="Access forbidden, wrong user")
     
     cursor = db.cursor()
     # Fetch student data from db
@@ -162,7 +162,7 @@ def enroll_student_in_class(student_id: int, class_id: int, request: Request, db
     # Check if the current user's id matches the requested student_id
     if r_flag:
         if current_user != student_id:
-            raise HTTPException(status_code=403, detail="Access forbidden, wrong student_id")
+            raise HTTPException(status_code=403, detail="Access forbidden, wrong user")
 
     cursor = db.cursor()
 
@@ -251,7 +251,7 @@ def drop_student_from_class(student_id: int, class_id: int, request: Request, db
     # Check if the current user's id matches the requested student_id
     if r_flag:
         if current_user != student_id:
-            raise HTTPException(status_code=403, detail="Access forbidden, wrong student_id")
+            raise HTTPException(status_code=403, detail="Access forbidden, wrong user")
     
     cursor = db.cursor()
 
@@ -319,7 +319,7 @@ def view_waiting_list(student_id: int, request: Request, db: sqlite3.Connection 
     # Check if the current user's id matches the requested student_id
     if r_flag:
         if current_user != student_id:
-            raise HTTPException(status_code=403, detail="Access forbidden, wrong student_id")
+            raise HTTPException(status_code=403, detail="Access forbidden, wrong user")
     
     cursor = db.cursor()
 
@@ -386,7 +386,7 @@ def remove_from_waitlist(student_id: int, class_id: int, request: Request, db: s
     # Check if the current user's id matches the requested student_id
     if r_flag:
         if current_user != student_id:
-            raise HTTPException(status_code=403, detail="Access forbidden, wrong student_id")
+            raise HTTPException(status_code=403, detail="Access forbidden, wrong user")
     
     cursor = db.cursor()
     
@@ -451,7 +451,7 @@ def view_current_waitlist(instructor_id: int, class_id: int, request: Request, d
     # Check if the current user's id matches the requested instructor_id
     if r_flag:
         if current_user != instructor_id:
-            raise HTTPException(status_code=403, detail="Access forbidden, wrong student_id")
+            raise HTTPException(status_code=403, detail="Access forbidden, wrong user")
     
     cursor = db.cursor()
 
@@ -539,7 +539,7 @@ def get_instructor_enrollment(instructor_id: int, class_id: int, request: Reques
     # Check if the current user's id matches the requested instructor_id
     if r_flag:
         if current_user != instructor_id:
-            raise HTTPException(status_code=403, detail="Access forbidden, wrong student_id")
+            raise HTTPException(status_code=403, detail="Access forbidden, wrong user")
     
     cursor = db.cursor()
 
@@ -621,7 +621,7 @@ def get_instructor_dropped(instructor_id: int, class_id: int, request: Request, 
     # Check if the current user's id matches the requested instructor_id
     if r_flag:
         if current_user != instructor_id:
-            raise HTTPException(status_code=403, detail="Access forbidden, wrong student_id")
+            raise HTTPException(status_code=403, detail="Access forbidden, wrong user")
     
     cursor = db.cursor()
 
@@ -696,7 +696,7 @@ def instructor_drop_class(instructor_id: int, class_id: int, student_id: int, re
     # Check if the current user's id matches the requested instructor_id
     if r_flag:
         if current_user != instructor_id:
-            raise HTTPException(status_code=403, detail="Access forbidden, wrong student_id")
+            raise HTTPException(status_code=403, detail="Access forbidden, wrong user")
     
     cursor = db.cursor()
 

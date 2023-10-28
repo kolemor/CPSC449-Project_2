@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import os
 import sys
 import json
@@ -32,7 +34,8 @@ def generate_claims(username, user_id, roles):
         "exp": int(exp.timestamp()),
     }
 
-    return token
+    output = json.dumps(token, indent=4)
+    print(output)
 
 
 if __name__ == "__main__":
