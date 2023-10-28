@@ -84,22 +84,27 @@ def get_db_read():
     else:
         global last_read_db
 
+        # check if secondary and tertiary are available
         if available_databases[1] and available_databases[2]:
+            # if so, check last db used, switch to other db
             if last_read_db == secondary_database:
                 last_read_db = tertiary_database
             else:
                 last_read_db = secondary_database
+        # else if secondary is available and tertiary is not, set to secondary
         elif available_databases[1] and not available_databases[2]:
             last_read_db = secondary_database
+        # else if secondary is not available and tertiary is, set to tertiary
         elif not available_databases[1] and available_databases[2]:
             last_read_db = tertiary_database
+        # else set to primary as a last resort
         else:
             last_read_db = primary_database
 
         with contextlib.closing(sqlite3.connect(last_read_db, check_same_thread=False)) as db:
             db.row_factory = sqlite3.Row
             yield db
-    
+
 def get_db_write():
 
     if os.path.exists(primary_database):
