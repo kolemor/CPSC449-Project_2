@@ -3,7 +3,7 @@ import os
 
 from users_hash import hash_password
 
-database = "users/users.db"
+database = "./var/primary/fuse/users.db"
 
 #Remove database if it exists before creating and populating it
 if os.path.exists(database):

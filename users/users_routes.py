@@ -2,6 +2,7 @@ import contextlib
 import sqlite3
 import typing
 import collections
+import itertools
 
 from fastapi import Depends, HTTPException, APIRouter, status, Query
 from users.users_schemas import *
@@ -10,7 +11,29 @@ from users.mkclaims import generate_claims
 
 router = APIRouter()
 
-database = "users/users.db"
+primary_db_url = "./var/primary/fuse/users.db" 
+# primary_db_url = "users/users.db"
+secondary_db_urls = ["var/secondary/data/dbs/users.db", "../var/ternary/data/dbs/users.db"]
+
+#Initialize a cycle to cycle through secondary replicas
+secondary_db_cycle = itertools.cycle(secondary_db_urls)
+
+#Connect to the primary database
+def get_primary_db():
+    with contextlib.closing(sqlite3.connect(primary_db_url, check_same_thread=False)) as db:
+        db.row_factory = sqlite3.Row
+        yield db
+
+#Connect to the secondary database using the cycle
+def get_secondary_db():
+    secondary_db_url = next(secondary_db_cycle)
+    with contextlib.closing(sqlite3.connect(secondary_db_url, check_same_thread=False)) as db:
+        db.row_factory = sqlite3.Row
+        yield db
+
+
+
+
 
 # Used for the search endpoint
 SearchParam = collections.namedtuple("SearchParam", ["name", "operator"])
@@ -29,11 +52,11 @@ SEARCH_PARAMS = [
     ),
 ]
 
-# Connect to the database
-def get_db():
-    with contextlib.closing(sqlite3.connect(database, check_same_thread=False)) as db:
-        db.row_factory = sqlite3.Row
-        yield db
+#Use get_db as a dependency, which will return either primary or secondary DB
+def get_db(use_primary: bool = True):
+    if use_primary:
+        return get_primary_db()
+    return get_secondary_db()
 
 #==========================================Users==================================================
 
@@ -47,16 +70,16 @@ def get_user_login(user: User, db: sqlite3.Connection = Depends(get_db)):
         """, (user.name,)
     )
     user_data = cursor.fetchone()
-    
-    # Check if user exists
+
+#   Check if user exists
     if not user_data:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid username")
 
     # Verify the password
     if not verify_password(user.password, user_data['password']):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid password")
-    
-    # Retrieve roles for the student
+
+    #Retrieve roles for the student
     cursor.execute(
            """
            SELECT role FROM user_role
@@ -73,7 +96,6 @@ def get_user_login(user: User, db: sqlite3.Connection = Depends(get_db)):
     #Issue JWT token
     token_data = generate_claims(user_data['name'], user_data['uid'], roles)
     return token_data
-
 
 
 # Create new user endpoint
