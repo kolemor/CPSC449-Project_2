@@ -10,6 +10,7 @@ from enrollment.enrollment_schemas import *
 router = APIRouter()
 dropped = []
 
+DEBUG = True
 FREEZE = False
 MAX_WAITLIST = 3
 database = "enrollment/enrollment.db"
@@ -880,8 +881,10 @@ def freeze_automatic_enrollment():
 @router.post("/registrar/create_user", tags=['Registrar'])
 def create_user(user: Create_User, db: sqlite3.Connection = Depends(get_db)):
     
-    print("username: ",user.name)
-    print("roles: ", user.roles)
+    if DEBUG:
+        print("username: ",user.name)
+        print("roles: ", user.roles)
+
     cursor = db.cursor()
 
     cursor.execute("INSERT INTO users (name) VALUES (?)", (user.name,))
@@ -896,7 +899,10 @@ def create_user(user: Create_User, db: sqlite3.Connection = Depends(get_db)):
         """, (user.name,)
         )
         user_data = cursor.fetchone()
-        print(user_data['uid'])
+        
+        if DEBUG:
+            print("User ID: ", user_data['uid'])
+        
         cursor.execute(
             """
             INSERT INTO user_role (user_id, role_id)
