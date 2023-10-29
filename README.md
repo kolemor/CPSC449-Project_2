@@ -96,10 +96,6 @@ the user database population can take anywhere from 30 seconds to a couple minut
 
 ## Users Service (Project 2)
 
-- mkclaims.py & mkjwk.py:
-
-  used for JWT claims and password hashing, located in the utils folder
-
 - populate_users.py:
 
   creates and populates the users database

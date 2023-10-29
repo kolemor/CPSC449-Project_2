@@ -321,14 +321,15 @@ def search_for_users(uid: typing.Optional[str] = None,
         roles_data = cursor.fetchall()
         roles = [role["role"] for role in roles_data]
 
-        user_information = User_info(
-            uid=user["uid"],
-            name=user["name"],
-            password=user["password"],
-            roles=roles
-        )
+        if previous_uid != user["uid"]:
+            user_information = User_info(
+                uid=user["uid"],
+                name=user["name"],
+                password=user["password"],
+                roles=roles
+            )
+            users_info.append(user_information)
         previous_uid = user["uid"]
-        users_info.append(user_information)
 
     return {"users" : users_info}
 
@@ -349,3 +350,13 @@ def change_user_role(user_id: int, roles: List[str], db: sqlite3.Connection = De
     if not user_data:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
 
+    cursor.execute(
+        """
+        SELECT * FROM users
+        JOIN user_roles ON users.uid = user_roles.user_id
+        WHERE uid = ?
+        """, (user_id,)
+    )
+    user_data = cursor.fetchone()
+
+    
