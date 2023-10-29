@@ -707,6 +707,21 @@
           }
         }
       ]
+    },
+    {
+      "endpoint": "/api/debug/users/{user_id}/role_change",
+      "method": "PUT",
+      "backend": [
+        {
+          "url_pattern": "/debug/users/{user_id}/role_change",
+          "host": ["http://localhost:5100"],
+          "extra_config": {
+            "backend/http": {
+              "return_error_details": "backend_alias"
+            }
+          }
+        }
+      ]
     }
   ]
 }

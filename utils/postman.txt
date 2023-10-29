@@ -40,7 +40,7 @@ POST: http://localhost:5400/api/students/{student_id}/classes/{class_id}/enroll/
 
 
 
-PUT: http://localhost:5400/api//api/students/{student_id}/classes/{class_id}/drop/
+PUT: http://localhost:5400/api/students/{student_id}/classes/{class_id}/drop/
 [Student, Registrar]
 
 --Waitlist--

@@ -352,11 +352,29 @@ def change_user_role(user_id: int, roles: List[str], db: sqlite3.Connection = De
 
     cursor.execute(
         """
-        SELECT * FROM users
-        JOIN user_roles ON users.uid = user_roles.user_id
-        WHERE uid = ?
+        DELETE FROM user_role WHERE user_id = ?
         """, (user_id,)
     )
-    user_data = cursor.fetchone()
 
-    
+    for role in roles:
+        
+        cursor.execute(
+        """
+        SELECT rid FROM role WHERE role = ?
+        """, (role,)
+        )
+        role_data = cursor.fetchone()
+
+        if not role_data:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Role not found")
+        
+        cursor.execute(
+        """
+        INSERT INTO user_role (user_id, role_id)
+        VALUES (?, ?)
+        """, (user_id, role_data['rid'])
+        )
+
+    db.commit()
+
+    return {"message": "Roles changed successfully"}  
