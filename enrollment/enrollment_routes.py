@@ -10,7 +10,7 @@ from enrollment.enrollment_schemas import *
 router = APIRouter()
 dropped = []
 
-DEBUG = True
+DEBUG = False
 FREEZE = False
 MAX_WAITLIST = 3
 database = "enrollment/enrollment.db"

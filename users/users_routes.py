@@ -10,7 +10,7 @@ from fastapi import Depends, HTTPException, APIRouter, status, Query
 from users.users_schemas import *
 from users.users_hash import hash_password, verify_password
 
-DEBUG = True
+DEBUG = False
 
 router = APIRouter()
 
@@ -350,12 +350,14 @@ def change_user_role(user_id: int, roles: List[str], db: sqlite3.Connection = De
     if not user_data:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
 
+    # Delete old role data
     cursor.execute(
         """
         DELETE FROM user_role WHERE user_id = ?
         """, (user_id,)
     )
 
+    # Update new role data
     for role in roles:
         
         cursor.execute(
@@ -365,6 +367,7 @@ def change_user_role(user_id: int, roles: List[str], db: sqlite3.Connection = De
         )
         role_data = cursor.fetchone()
 
+        # Check if valid role was given
         if not role_data:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Role not found")
         

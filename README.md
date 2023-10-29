@@ -154,6 +154,6 @@ the user database population can take anywhere from 30 seconds to a couple minut
 
   the required libraries that pip needs to install
 
-- CPSC 449 Project 1 Documentation:
+- CPSC 449 Project 2 Documentation:
 
   self explanatory
