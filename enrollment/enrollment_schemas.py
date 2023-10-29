@@ -80,3 +80,7 @@ class User_info(BaseModel):
     uid: int
     name: str
     roles: List
+
+class Create_User(BaseModel):
+    name: str
+    roles: List

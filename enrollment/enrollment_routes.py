@@ -10,6 +10,7 @@ from enrollment.enrollment_schemas import *
 router = APIRouter()
 dropped = []
 
+DEBUG = False
 FREEZE = False
 MAX_WAITLIST = 3
 database = "enrollment/enrollment.db"
@@ -59,22 +60,22 @@ SEARCH_PARAMS = [
 @router.get("/students/{student_id}/classes", tags=['Student']) 
 def get_available_classes(student_id: int, request: Request, db: sqlite3.Connection = Depends(get_db)):
 
-    current_user = int(request.headers.get("X-User"))
+    if request.headers.get("X-User"):
+        current_user = int(request.headers.get("X-User"))
     
-    roles_string = request.headers.get("X-Roles")
-    current_roles = roles_string.split(",")
+        roles_string = request.headers.get("X-Roles")
+        current_roles = roles_string.split(",")
 
-    r_flag = True
-    # Check if the current user's role matches 'registrar'
-    for role in current_roles:
-        if role == 'registrar':
-            r_flag = False
-            print("true")
+        r_flag = True
+        # Check if the current user's role matches 'registrar'
+        for role in current_roles:
+            if role == 'registrar':
+                r_flag = False
     
-    # Check if the current user's id matches the requested student_id
-    if r_flag:
-        if current_user != student_id:
-            raise HTTPException(status_code=403, detail="Access forbidden, wrong student_id")
+        # Check if the current user's id matches the requested student_id
+        if r_flag:
+            if current_user != student_id:
+                raise HTTPException(status_code=403, detail="Access forbidden, wrong user")
     
     cursor = db.cursor()
     # Fetch student data from db
@@ -146,23 +147,24 @@ def get_available_classes(student_id: int, request: Request, db: sqlite3.Connect
 # or will automatically put the student on an open waitlist for a full class
 @router.post("/students/{student_id}/classes/{class_id}/enroll", tags=['Student'])
 def enroll_student_in_class(student_id: int, class_id: int, request: Request, db: sqlite3.Connection = Depends(get_db)):
-   
-    current_user = int(request.headers.get("X-User"))
     
-    roles_string = request.headers.get("X-Roles")
-    current_roles = roles_string.split(",")
+    if request.headers.get("X-User"):
 
-    r_flag = True
-    # Check if the current user's role matches 'registrar'
-    for role in current_roles:
-        if role == 'registrar':
-            r_flag = False
-            print("true")
+        current_user = int(request.headers.get("X-User"))
     
-    # Check if the current user's id matches the requested student_id
-    if r_flag:
-        if current_user != student_id:
-            raise HTTPException(status_code=403, detail="Access forbidden, wrong student_id")
+        roles_string = request.headers.get("X-Roles")
+        current_roles = roles_string.split(",")
+
+        r_flag = True
+        # Check if the current user's role matches 'registrar'
+        for role in current_roles:
+            if role == 'registrar':
+                r_flag = False
+    
+        # Check if the current user's id matches the requested student_id
+        if r_flag:
+            if current_user != student_id:
+                raise HTTPException(status_code=403, detail="Access forbidden, wrong user")
 
     cursor = db.cursor()
 
@@ -236,22 +238,22 @@ def enroll_student_in_class(student_id: int, class_id: int, request: Request, db
 @router.put("/students/{student_id}/classes/{class_id}/drop/", tags=['Student'])
 def drop_student_from_class(student_id: int, class_id: int, request: Request, db: sqlite3.Connection = Depends(get_db)):
     
-    current_user = int(request.headers.get("X-User"))
+    if request.headers.get("X-User"):
+        current_user = int(request.headers.get("X-User"))
     
-    roles_string = request.headers.get("X-Roles")
-    current_roles = roles_string.split(",")
+        roles_string = request.headers.get("X-Roles")
+        current_roles = roles_string.split(",")
 
-    r_flag = True
-    # Check if the current user's role matches 'registrar'
-    for role in current_roles:
-        if role == 'registrar':
-            r_flag = False
-            print("true")
+        r_flag = True
+        # Check if the current user's role matches 'registrar'
+        for role in current_roles:
+            if role == 'registrar':
+                r_flag = False
     
-    # Check if the current user's id matches the requested student_id
-    if r_flag:
-        if current_user != student_id:
-            raise HTTPException(status_code=403, detail="Access forbidden, wrong student_id")
+        # Check if the current user's id matches the requested student_id
+        if r_flag:
+            if current_user != student_id:
+                raise HTTPException(status_code=403, detail="Access forbidden, wrong user")
     
     cursor = db.cursor()
 
@@ -304,22 +306,22 @@ def drop_student_from_class(student_id: int, class_id: int, request: Request, db
 @router.get("/waitlist/students/{student_id}", tags=['Waitlist'])
 def view_waiting_list(student_id: int, request: Request, db: sqlite3.Connection = Depends(get_db)):
     
-    current_user = int(request.headers.get("X-User"))
+    if request.headers.get("X-User"):
+        current_user = int(request.headers.get("X-User"))
     
-    roles_string = request.headers.get("X-Roles")
-    current_roles = roles_string.split(",")
+        roles_string = request.headers.get("X-Roles")
+        current_roles = roles_string.split(",")
 
-    r_flag = True
-    # Check if the current user's role matches 'registrar'
-    for role in current_roles:
-        if role == 'registrar':
-            r_flag = False
-            print("true")
+        r_flag = True
+        # Check if the current user's role matches 'registrar'
+        for role in current_roles:
+            if role == 'registrar':
+                r_flag = False
     
-    # Check if the current user's id matches the requested student_id
-    if r_flag:
-        if current_user != student_id:
-            raise HTTPException(status_code=403, detail="Access forbidden, wrong student_id")
+        # Check if the current user's id matches the requested student_id
+        if r_flag:
+            if current_user != student_id:
+                raise HTTPException(status_code=403, detail="Access forbidden, wrong user")
     
     cursor = db.cursor()
 
@@ -371,22 +373,22 @@ def view_waiting_list(student_id: int, request: Request, db: sqlite3.Connection 
 @router.put("/waitlist/students/{student_id}/classes/{class_id}/drop", tags=['Waitlist'])
 def remove_from_waitlist(student_id: int, class_id: int, request: Request, db: sqlite3.Connection = Depends(get_db)):
     
-    current_user = int(request.headers.get("X-User"))
+    if request.headers.get("X-User"):
+        current_user = int(request.headers.get("X-User"))
     
-    roles_string = request.headers.get("X-Roles")
-    current_roles = roles_string.split(",")
+        roles_string = request.headers.get("X-Roles")
+        current_roles = roles_string.split(",")
 
-    r_flag = True
-    # Check if the current user's role matches 'registrar'
-    for role in current_roles:
-        if role == 'registrar':
-            r_flag = False
-            print("true")
+        r_flag = True
+        # Check if the current user's role matches 'registrar'
+        for role in current_roles:
+            if role == 'registrar':
+                r_flag = False
     
-    # Check if the current user's id matches the requested student_id
-    if r_flag:
-        if current_user != student_id:
-            raise HTTPException(status_code=403, detail="Access forbidden, wrong student_id")
+        # Check if the current user's id matches the requested student_id
+        if r_flag:
+            if current_user != student_id:
+                raise HTTPException(status_code=403, detail="Access forbidden, wrong user")
     
     cursor = db.cursor()
     
@@ -436,22 +438,22 @@ def remove_from_waitlist(student_id: int, class_id: int, request: Request, db: s
 @router.get("/waitlist/instructors/{instructor_id}/classes/{class_id}",tags=['Waitlist'])
 def view_current_waitlist(instructor_id: int, class_id: int, request: Request, db: sqlite3.Connection = Depends(get_db)):
     
-    current_user = int(request.headers.get("X-User"))
+    if request.headers.get("X-User"):
+        current_user = int(request.headers.get("X-User"))
     
-    roles_string = request.headers.get("X-Roles")
-    current_roles = roles_string.split(",")
+        roles_string = request.headers.get("X-Roles")
+        current_roles = roles_string.split(",")
 
-    r_flag = True
-    # Check if the current user's role matches 'registrar'
-    for role in current_roles:
-        if role == 'registrar':
-            r_flag = False
-            print("true")
+        r_flag = True
+        # Check if the current user's role matches 'registrar'
+        for role in current_roles:
+            if role == 'registrar':
+                r_flag = False
     
-    # Check if the current user's id matches the requested instructor_id
-    if r_flag:
-        if current_user != instructor_id:
-            raise HTTPException(status_code=403, detail="Access forbidden, wrong student_id")
+        # Check if the current user's id matches the requested instructor_id
+        if r_flag:
+            if current_user != instructor_id:
+                raise HTTPException(status_code=403, detail="Access forbidden, wrong user")
     
     cursor = db.cursor()
 
@@ -524,22 +526,22 @@ def view_current_waitlist(instructor_id: int, class_id: int, request: Request, d
 @router.get("/instructors/{instructor_id}/classes/{class_id}/enrollment", tags=['Instructor'])
 def get_instructor_enrollment(instructor_id: int, class_id: int, request: Request, db: sqlite3.Connection = Depends(get_db)):
     
-    current_user = int(request.headers.get("X-User"))
+    if request.headers.get("X-User"):
+        current_user = int(request.headers.get("X-User"))
     
-    roles_string = request.headers.get("X-Roles")
-    current_roles = roles_string.split(",")
+        roles_string = request.headers.get("X-Roles")
+        current_roles = roles_string.split(",")
 
-    r_flag = True
-    # Check if the current user's role matches 'registrar'
-    for role in current_roles:
-        if role == 'registrar':
-            r_flag = False
-            print("true")
+        r_flag = True
+        # Check if the current user's role matches 'registrar'
+        for role in current_roles:
+            if role == 'registrar':
+                r_flag = False
     
-    # Check if the current user's id matches the requested instructor_id
-    if r_flag:
-        if current_user != instructor_id:
-            raise HTTPException(status_code=403, detail="Access forbidden, wrong student_id")
+        # Check if the current user's id matches the requested instructor_id
+        if r_flag:
+            if current_user != instructor_id:
+                raise HTTPException(status_code=403, detail="Access forbidden, wrong user")
     
     cursor = db.cursor()
 
@@ -606,22 +608,22 @@ def get_instructor_enrollment(instructor_id: int, class_id: int, request: Reques
 @router.get("/instructors/{instructor_id}/classes/{class_id}/drop", tags=['Instructor'])
 def get_instructor_dropped(instructor_id: int, class_id: int, request: Request, db: sqlite3.Connection = Depends(get_db)):
     
-    current_user = int(request.headers.get("X-User"))
+    if request.headers.get("X-User"):
+        current_user = int(request.headers.get("X-User"))
     
-    roles_string = request.headers.get("X-Roles")
-    current_roles = roles_string.split(",")
+        roles_string = request.headers.get("X-Roles")
+        current_roles = roles_string.split(",")
 
-    r_flag = True
-    # Check if the current user's role matches 'registrar'
-    for role in current_roles:
-        if role == 'registrar':
-            r_flag = False
-            print("true")
+        r_flag = True
+        # Check if the current user's role matches 'registrar'
+        for role in current_roles:
+            if role == 'registrar':
+                r_flag = False
     
-    # Check if the current user's id matches the requested instructor_id
-    if r_flag:
-        if current_user != instructor_id:
-            raise HTTPException(status_code=403, detail="Access forbidden, wrong student_id")
+        # Check if the current user's id matches the requested instructor_id
+        if r_flag:
+            if current_user != instructor_id:
+                raise HTTPException(status_code=403, detail="Access forbidden, wrong user")
     
     cursor = db.cursor()
 
@@ -681,22 +683,22 @@ def get_instructor_dropped(instructor_id: int, class_id: int, request: Request, 
 @router.post("/instructors/{instructor_id}/classes/{class_id}/students/{student_id}/drop", tags=['Instructor'])
 def instructor_drop_class(instructor_id: int, class_id: int, student_id: int, request: Request, db: sqlite3.Connection = Depends(get_db)):
     
-    current_user = int(request.headers.get("X-User"))
+    if request.headers.get("X-User"):
+        current_user = int(request.headers.get("X-User"))
     
-    roles_string = request.headers.get("X-Roles")
-    current_roles = roles_string.split(",")
+        roles_string = request.headers.get("X-Roles")
+        current_roles = roles_string.split(",")
 
-    r_flag = True
-    # Check if the current user's role matches 'registrar'
-    for role in current_roles:
-        if role == 'registrar':
-            r_flag = False
-            print("true")
+        r_flag = True
+        # Check if the current user's role matches 'registrar'
+        for role in current_roles:
+            if role == 'registrar':
+                r_flag = False
     
-    # Check if the current user's id matches the requested instructor_id
-    if r_flag:
-        if current_user != instructor_id:
-            raise HTTPException(status_code=403, detail="Access forbidden, wrong student_id")
+        # Check if the current user's id matches the requested instructor_id
+        if r_flag:
+            if current_user != instructor_id:
+                raise HTTPException(status_code=403, detail="Access forbidden, wrong user")
     
     cursor = db.cursor()
 
@@ -875,6 +877,43 @@ def freeze_automatic_enrollment():
         FREEZE = True
         return {"message": "Automatic enrollment frozen successfully"}
 
+
+# Create a new user (used by the user service to duplicate user info)
+@router.post("/registrar/create_user", tags=['Registrar'])
+def create_user(user: Create_User, db: sqlite3.Connection = Depends(get_db)):
+    
+    if DEBUG:
+        print("username: ",user.name)
+        print("roles: ", user.roles)
+
+    cursor = db.cursor()
+
+    cursor.execute("INSERT INTO users (name) VALUES (?)", (user.name,))
+    
+    for role in user.roles:
+        cursor.execute("SELECT rid FROM role WHERE role = ?", (role,))
+        rid = cursor.fetchone()
+        
+        cursor.execute(
+        """
+        SELECT * FROM users WHERE name = ?
+        """, (user.name,)
+        )
+        user_data = cursor.fetchone()
+        
+        if DEBUG:
+            print("User ID: ", user_data['uid'])
+        
+        cursor.execute(
+            """
+            INSERT INTO user_role (user_id, role_id)
+            VALUES (?, ?)
+            """, (user_data['uid'], rid['rid'])
+        )
+
+    db.commit()
+
+    return {"Message": "user created successfully"}
 
 #==========================================Test Endpoints==================================================
 

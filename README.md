@@ -8,9 +8,13 @@
 
 `pip install -r requirements.txt`
 
-## then in the working directory run this command to run the uvicorn server
+## then in the main directory run this command to run the services
 
-`foreman start -m enrollment=3,users=1,krakend=1`
+`foreman start -m enrollment=3,primary=1,secondary=1,tertiary=1,krakend=1`
+
+- as a note, when running foreman for the first time, the folder structure for litefs will be created in var.
+
+- once running, then you can create the users.db using populate_users.py. It should be created in primary and propagated to secondary and tertiary. If not you may need to restart for it to work properly.
 
 ## finally go to the following link to test the api
 
@@ -28,7 +32,7 @@
 
 - KrakenD (enrollment service)
 
-  `http://localhost:5200/api/`
+  `http://localhost:5400/api/`
 
 ## to populate the databases with some sample data run populate.py from the main directory
 
@@ -37,10 +41,6 @@
 `python users/populate_users.py`
 
 the user database population can take anywhere from 30 seconds to a couple minutes as there are ~600 users, and each one needs to have their password hashed, which takes some time. I'll see if I can optimize this later on, but for now it works
-
-## if you want to view what was populated in the enrollment.db run enrollment_queries.py (the population for users.db does this automatically)
-
-`python enrollment_queries.py`
 
 # Enrollment Service testing variables
 
@@ -52,6 +52,8 @@ the user database population can take anywhere from 30 seconds to a couple minut
 - there are 500 student_ids, with upwards of 300 of them currently being used
 - there are 100 instructor_ids, with only ~14 of them being used
 
+- there are useful debug endpoints that you can use to view information on what is contained within the database
+
 # Users Service testing variables
 
 - the first user has a username of "James Smith"
@@ -59,6 +61,8 @@ the user database population can take anywhere from 30 seconds to a couple minut
 - Users 1 - 500 have the 'student' role
 - Users 501 - 600 have the 'instructor' role
 - Users 551 - 600 also have the 'registrar' role
+
+- there are useful debug endpoints that you can use to view information on what is contained within the database
 
 # windows execution policy
 
@@ -69,10 +73,6 @@ the user database population can take anywhere from 30 seconds to a couple minut
 # Overview of files
 
 ## Enrollment Service (Project 1)
-
-- enrollment_queries.py:
-
-  prints to the terminal what is located within the enrollment database
 
 - enrollment_routes.py:
 
@@ -95,10 +95,6 @@ the user database population can take anywhere from 30 seconds to a couple minut
   has all the base models for the service
 
 ## Users Service (Project 2)
-
-- mkclaims.py & mkjwk.py:
-
-  used for JWT claims
 
 - populate_users.py:
 
@@ -124,6 +120,30 @@ the user database population can take anywhere from 30 seconds to a couple minut
 
   has functions which handle password hashing
 
+## utils
+
+- mkclaims.py
+
+  prints to the terminal an example of a JWT claim
+
+- mkjwk.py
+
+  prints to the terminal a public / private RSA key pair
+
+- postman.txt
+
+  has useful information you can use to copy past in postman requests to make it easier
+
+## jwk
+
+- private.json
+
+  contains the private keys used in JWT verification
+
+- public.json
+
+  contains the public keys used in JWT verification
+
 ## Misc files
 
 - Procfile:
@@ -134,6 +154,6 @@ the user database population can take anywhere from 30 seconds to a couple minut
 
   the required libraries that pip needs to install
 
-- CPSC 449 Project 1 Documentation:
+- CPSC 449 Project 2 Documentation:
 
   self explanatory

@@ -3,7 +3,7 @@ import os
 
 from users_hash import hash_password
 
-database = "users/users.db"
+database = "var/primary/fuse/users.db"
 
 #Remove database if it exists before creating and populating it
 if os.path.exists(database):
@@ -42,6 +42,7 @@ for male in mname:
 
 if os.path.exists(database):
     os.remove(database)
+
 """ create a database connection to the SQLite database
         specified by db_file
     :param db_file: database file
@@ -56,16 +57,6 @@ def create_connection(db_file):
         print("Error:", e)
 
     return conn
-
-def select_query(conn, query):
-    try:
-        c = conn.cursor()
-        c.execute(query)
-        rows = c.fetchall()
-        for row in rows:
-            print(row)
-    except sqlite3.Error as e:
-        print("Error:", e)
 
 """ create a table from the create_table_sql statement
 :param conn: Connection object
@@ -156,25 +147,9 @@ def populate_database():
 
     conn.commit()
     cursor.close()
-
-    query = """SELECT name FROM sqlite_master WHERE type = 'table'"""
-    select_query(conn, query)
-
-    print("--- test to see if population worked ---")
-
-    query = "SELECT * FROM users"
-    print('\n'+query)
-    select_query(conn, query)
-    
-    query = "SELECT * FROM role"
-    print('\n'+query)
-    select_query(conn, query)
-
-    query = "SELECT * FROM user_role"
-    print('\n'+query)
-    select_query(conn, query)
-
     conn.close()
+
+    print("Database populated :D")
 
 if __name__ == "__main__":
     populate_database()
