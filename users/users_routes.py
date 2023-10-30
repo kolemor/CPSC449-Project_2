@@ -5,13 +5,20 @@ import collections
 import os
 import httpx
 import datetime
+import logging.config
 
 from fastapi import Depends, HTTPException, APIRouter, status, Query
+from pydantic_settings import BaseSettings
 from users.users_schemas import *
 from users.users_hash import hash_password, verify_password
 
+class Settings(BaseSettings, env_file=".env", extra="ignore"):
+    database: str
+    logging_config: str
+
 DEBUG = False
 
+settings = Settings()
 router = APIRouter()
 
 primary_database = "var/primary/fuse/users.db"
@@ -61,11 +68,14 @@ def generate_claims(username, user_id, roles):
 
     return token
 
+def get_logger():
+    return logging.getLogger(__name__)
+
 # Flag to track the last database used for read operations
 last_read_db = None  # Start with None to use secondary database first
 
 # Connect to the appropriate database based on the endpoint
-def get_db_read():
+def get_db_read(logger: logging.Logger = Depends(get_logger)):
     
     if DEBUG:
         print("Using read-only db")
@@ -117,9 +127,10 @@ def get_db_read():
 
         with contextlib.closing(sqlite3.connect(last_read_db, check_same_thread=False)) as db:
             db.row_factory = sqlite3.Row
+            db.set_trace_callback(logger.debug)
             yield db
 
-def get_db_write():
+def get_db_write(logger: logging.Logger = Depends(get_logger)):
 
     if DEBUG:
         print("Using write allowed db")
@@ -127,10 +138,12 @@ def get_db_write():
     if os.path.exists(primary_database):
         with contextlib.closing(sqlite3.connect(primary_database, check_same_thread=False)) as db:
             db.row_factory = sqlite3.Row
+            db.set_trace_callback(logger.debug)
             yield db
     else:
         raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Database unavailable")
 
+logging.config.fileConfig(settings.logging_config, disable_existing_loggers=False)
 
 #==========================================Users==================================================
 
@@ -138,6 +151,7 @@ def get_db_write():
 @router.post("/users/login", tags=['Users'])
 def get_user_login(user: User, db: sqlite3.Connection = Depends(get_db_read)):
     cursor = db.cursor()
+
     cursor.execute(
         """
         SELECT * FROM users WHERE name = ?
