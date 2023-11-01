@@ -21,6 +21,34 @@ sudo apt update
 
 # Install KrakenD
 sudo apt install -y krakend
+
+# ***** Block to install REdis *****
+# Update package lists
+sudo apt update
+
+# Install REdis 
+sudo apt install --yes redis
+
+# ***** Block to install AWS CLI *****
+# Download the installer
+curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+
+# Unzip the installer
+unzip awscliv2.zip
+
+# Install AWS CLI
+sudo ./aws/install
+
+
+# ***** Block to install DynamoDB *****
+# Update package lists
+sudo apt update
+
+# Install JRE
+sudo apt install --yes openjdk-19-jre-headless
+
+
+
 # *************************************
 
 # Install HTTPie for Terminal to work with REST APIs
