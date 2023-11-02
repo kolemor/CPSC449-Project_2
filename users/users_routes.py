@@ -13,8 +13,8 @@ from users.users_schemas import *
 from users.users_hash import hash_password, verify_password
 
 class Settings(BaseSettings, env_file=".env", extra="ignore"):
-    database: str
-    logging_config: str
+    users_database: str
+    users_logging_config: str
 
 DEBUG = False
 
@@ -143,7 +143,7 @@ def get_db_write(logger: logging.Logger = Depends(get_logger)):
     else:
         raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Database unavailable")
 
-logging.config.fileConfig(settings.logging_config, disable_existing_loggers=False)
+logging.config.fileConfig(settings.users_logging_config, disable_existing_loggers=False)
 
 #==========================================Users==================================================
 

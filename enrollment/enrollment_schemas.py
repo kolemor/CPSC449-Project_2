@@ -1,5 +1,10 @@
 from pydantic import BaseModel
+from pydantic_settings import BaseSettings
 from typing import List
+
+class Settings(BaseSettings, env_file=".env", extra="ignore"):
+    enrollment_database: str
+    enrollment_logging_config: str
 
 class Department(BaseModel):
     id: int
