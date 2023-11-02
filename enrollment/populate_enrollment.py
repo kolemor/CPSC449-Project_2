@@ -467,6 +467,19 @@ def populate_database():
         """
     )
 
+    # Create Indexes
+    cursor.execute(
+        "CREATE INDEX enrollment_idx_af26e187 ON enrollment(class_id, placement)"
+    )
+
+    cursor.execute(
+        "CREATE INDEX dropped_idx_20095c72 ON dropped(class_id)"
+    )
+
+    cursor.execute(
+        "CREATE INDEX users_idx_00015c29 ON users(name)"
+    )
+
     conn.commit()
     cursor.close()
     conn.close()
