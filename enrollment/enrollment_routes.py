@@ -2,11 +2,13 @@ import contextlib
 import sqlite3
 import typing
 import collections
+import logging.config
 
 from fastapi import Depends, HTTPException, APIRouter, status, Request
 from typing import List
 from enrollment.enrollment_schemas import *
 
+settings = Settings()
 router = APIRouter()
 dropped = []
 
@@ -15,10 +17,16 @@ FREEZE = False
 MAX_WAITLIST = 3
 database = "enrollment/enrollment.db"
 
+
+def get_logger():
+    return logging.getLogger(__name__)
+
+
 # Connect to the database
-def get_db():
+def get_db(logger: logging.Logger = Depends(get_logger)):
     with contextlib.closing(sqlite3.connect(database, check_same_thread=False)) as db:
         db.row_factory = sqlite3.Row
+        db.set_trace_callback(logger.debug)
         yield db
 
 
@@ -51,6 +59,9 @@ SEARCH_PARAMS = [
         "LIKE",
     ),
 ]
+
+
+logging.config.fileConfig(settings.enrollment_logging_config, disable_existing_loggers=False)
 
 
 #==========================================students==================================================
