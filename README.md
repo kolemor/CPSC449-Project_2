@@ -6,17 +6,19 @@
 
 `source myenv/bin/activate`
 
-`pip install -r requirements.txt`
+`sh ./bin/install.sh`
+
+- NOTE: running the install command will install ALL dependencies and requirements, including aws and DynamoDB, it should also properly configure aws as well
 
 ## then in the main directory run this command to run the services
 
-`foreman start -m enrollment=3,primary=1,secondary=1,tertiary=1,krakend=1`
+`sh run.sh`
 
 - as a note, when running foreman for the first time, the folder structure for litefs will be created in var.
 
-- once running, then you can create the users.db using populate_users.py. It should be created in primary and propagated to secondary and tertiary. If not you may need to restart for it to work properly.
+- once running, then you can create the users.db. It should be created in primary and propagated to secondary and tertiary. If not you may need to restart for it to work properly.
 
-## finally go to the following link to test the api
+## Links to test the api
 
 - Enrollment service
 
@@ -30,17 +32,21 @@
 
   `http://localhost:5100/docs`
 
-- KrakenD (enrollment service)
+- KrakenD
 
   `http://localhost:5400/api/`
 
-## to populate the databases with some sample data run populate.py from the main directory
+## Create the databases or restore them to their default data
+
+`sh ./bin/db_creation.sh`
+
+### If you want to individually create each database, you can instead run these commands from the main directory
 
 `python enrollment/populate_enrollment.py`
 
 `python users/populate_users.py`
 
-the user database population can take anywhere from 30 seconds to a couple minutes as there are ~600 users, and each one needs to have their password hashed, which takes some time. I'll see if I can optimize this later on, but for now it works
+- the user database population can take anywhere from 30 seconds to a couple minutes as there are ~600 users, and each one needs to have their password hashed, which takes some time. I'll see if I can optimize this later on, but for now it works
 
 # Enrollment Service testing variables
 
@@ -153,7 +159,3 @@ the user database population can take anywhere from 30 seconds to a couple minut
 - requirements.txt:
 
   the required libraries that pip needs to install
-
-- CPSC 449 Project 2 Documentation:
-
-  self explanatory

@@ -3,6 +3,14 @@ __pycache__
 __pycache__/
 *.pyc
 
+# Ignore AWS files
+aws/
+
+# Ignore DynamoDB files
+DynamoDBLocal_lib/
+dynamodb*
+DynamoDB*
+
 # Ignore the virtual environment directory (if using virtual environments)
 venv/
 env/
