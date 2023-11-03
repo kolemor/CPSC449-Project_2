@@ -1036,7 +1036,7 @@ def view_all_class_waitlists(db: sqlite3.Connection = Depends(get_db)):
 
 # Search for specific users based on optional parameters,
 # if no parameters are given, returns all users
-@router.get("/debug/users/search", tags=['Debug'])
+@router.get("/debug/search", tags=['Debug'])
 def search_for_users(uid: typing.Optional[str] = None,
                  name: typing.Optional[str] = None,
                  role: typing.Optional[str] = None,
@@ -1073,26 +1073,29 @@ def search_for_users(uid: typing.Optional[str] = None,
     if not search_data:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No users found that match search parameters")
 
+    previous_uid = None
     for user in search_data:
         cursor.execute(
             """
-            SELECT role FROM user_role 
+            SELECT role FROM users 
             JOIN role ON user_role.role_id = role.rid
-            JOIN users ON user_role.user_id = users.uid
-            WHERE user_id = ?
+            JOIN user_role ON users.uid = user_role.user_id
+            WHERE uid = ?
             """,
             (user["uid"],)
         )
         roles_data = cursor.fetchall()
         roles = [role["role"] for role in roles_data]
 
-        user_information = User_info(
-            uid=user["uid"],
-            name=user["name"],
-            roles=roles
-        )
-
-        users_info.append(user_information)
+        if previous_uid != user["uid"]:
+            user_information = User_info(
+                uid=user["uid"],
+                name=user["name"],
+                password=user["password"],
+                roles=roles
+            )
+            users_info.append(user_information)
+        previous_uid = user["uid"]
 
     return {"users" : users_info}
 
